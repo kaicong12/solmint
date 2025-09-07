@@ -1,6 +1,7 @@
 "use client";
 
 import { WalletButton } from "@/components/wallet/WalletButton";
+import { MarketplaceDashboard } from "@/components/marketplace/MarketplaceDashboard";
 import { useWallet } from "@/hooks/useWallet";
 import { formatSol } from "@/lib/solana/wallet";
 import { CURRENT_NETWORK } from "@/constants";

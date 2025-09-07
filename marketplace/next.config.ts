@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
   webpack: (config, { isServer }) => {
@@ -43,6 +44,10 @@ const nextConfig: NextConfig = {
       process.env.NEXT_PUBLIC_SOLANA_NETWORK || "devnet",
     NEXT_PUBLIC_RPC_ENDPOINT:
       process.env.NEXT_PUBLIC_RPC_ENDPOINT || "https://api.devnet.solana.com",
+  },
+
+  turbopack: {
+    root: path.join(__dirname, ".."),
   },
 
   // Security headers
