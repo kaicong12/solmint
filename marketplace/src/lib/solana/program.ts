@@ -1,13 +1,11 @@
 import {
-  Connection,
   PublicKey,
-  Transaction,
   TransactionInstruction,
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
   AccountMeta,
 } from "@solana/web3.js";
-import { serialize, deserialize } from "borsh";
+import { serialize } from "borsh";
 
 // Program ID - This would be your deployed program ID
 export const MARKETPLACE_PROGRAM_ID = new PublicKey(

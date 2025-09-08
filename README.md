@@ -1,43 +1,6 @@
-# NFT Marketplace - Solana Native Implementation
+# Solana NFT Marketplace
 
 A complete NFT marketplace built with native Rust Solana SDK and Next.js frontend, enabling users to list, buy, and manage NFT sales with configurable marketplace fees.
-
-## 🏗️ Architecture
-
-### Backend (Solana Program)
-
-- **Language**: Rust with native Solana SDK v2.2.0
-- **Architecture**: Program Derived Addresses (PDAs) for deterministic account management
-- **Serialization**: Borsh for efficient data encoding/decoding
-- **Error Handling**: Custom error types with detailed error messages
-
-### Frontend
-
-- **Framework**: Next.js 14 with TypeScript
-- **Wallet Integration**: Solana Wallet Adapter
-- **UI**: React components with Tailwind CSS
-- **State Management**: React hooks for blockchain interactions
-
-## 📁 Project Structure
-
-```
-├── solana-program/           # Rust Solana program
-│   ├── src/
-│   │   ├── lib.rs           # Program entry point
-│   │   ├── processor.rs     # Core business logic
-│   │   ├── instruction.rs   # Instruction definitions
-│   │   ├── state.rs         # Account data structures
-│   │   └── error.rs         # Custom error types
-│   └── Cargo.toml           # Rust dependencies
-├── marketplace/             # Next.js frontend
-│   ├── src/
-│   │   ├── lib/solana/      # Solana integration utilities
-│   │   ├── hooks/           # React hooks
-│   │   ├── components/      # UI components
-│   │   └── app/             # Next.js app router
-│   └── package.json         # Node.js dependencies
-└── README.md               # This file
-```
 
 ## 🚀 Features
 

@@ -125,12 +125,15 @@ export function checkWalletFeatures(wallet: WalletAdapter | null): {
   return {
     canSignTransaction:
       "signTransaction" in wallet &&
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       typeof (wallet as any).signTransaction === "function",
     canSignAllTransactions:
       "signAllTransactions" in wallet &&
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       typeof (wallet as any).signAllTransactions === "function",
     canSignMessage:
       "signMessage" in wallet &&
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       typeof (wallet as any).signMessage === "function",
   };
 }
