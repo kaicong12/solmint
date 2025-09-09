@@ -1,16 +1,15 @@
 use solana_client::rpc_client::RpcClient;
-use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey, signature::Signature};
+use solana_sdk::{pubkey::Pubkey, signature::Signature};
+use solana_commitment_config::CommitmentConfig;
 use sqlx::PgPool;
 use std::{str::FromStr, sync::Arc, time::Duration};
 use tokio::time::sleep;
+use solana_transaction_status::UiTransactionEncoding;
 
 use crate::{
     config::Config,
     error::AppError,
-    models::{
-        Activity, CreateActivityRequest, CreateListingRequest, CreateNftRequest, CreateSaleRequest,
-        Listing, Nft, Sale, UpdateListingRequest,
-    },
+    models::{Activity, CreateActivityRequest},
 };
 
 pub struct SolanaIndexer {
@@ -93,7 +92,7 @@ impl SolanaIndexer {
             .get_block_with_config(
                 slot,
                 solana_client::rpc_config::RpcBlockConfig {
-                    encoding: Some(solana_account_decoder::UiTransactionEncoding::Json),
+                    encoding: Some(UiTransactionEncoding::Json),
                     transaction_details: Some(
                         solana_transaction_status::TransactionDetails::Full,
                     ),

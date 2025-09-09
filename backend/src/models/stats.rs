@@ -78,19 +78,15 @@ impl MarketplaceStats {
             GlobalStats,
             r#"
             SELECT 
-                COALESCE(SUM(s.price), 0) as total_volume,
-                COUNT(s.id) as total_sales,
-                COUNT(DISTINCT l.id) as total_listings,
-                COUNT(DISTINCT n.id) as total_nfts,
-                COUNT(DISTINCT c.id) as total_collections,
-                COUNT(DISTINCT u.id) as total_users,
-                AVG(s.price)::bigint as average_price,
-                MIN(l.price) as floor_price
-            FROM sales s
-            FULL OUTER JOIN listings l ON l.status = 'active'
-            FULL OUTER JOIN nfts n ON true
-            FULL OUTER JOIN collections c ON true
-            FULL OUTER JOIN users u ON true
+                (SELECT COALESCE(SUM(price), 0) FROM sales) as total_volume,
+                (SELECT COUNT(id) FROM sales) as total_sales,
+                (SELECT COUNT(DISTINCT id) FROM listings WHERE status = 'active') as total_listings,
+                (SELECT COUNT(DISTINCT id) FROM nfts) as total_nfts,
+                (SELECT COUNT(DISTINCT id) FROM collections) as total_collections,
+                (SELECT COUNT(DISTINCT id) FROM users) as total_users,
+                (SELECT AVG(price)::bigint FROM sales) as average_price,
+                (SELECT MIN(price) FROM listings WHERE status = 'active') as floor_price
+            FROM (SELECT 1) dummy
             "#
         )
         .fetch_one(pool)
@@ -114,10 +110,10 @@ impl MarketplaceStats {
                 unique_sellers,
                 average_price
             FROM marketplace_stats
-            WHERE date >= CURRENT_DATE - INTERVAL '%d days'
+            WHERE date >= CURRENT_DATE - ($1)::interval
             ORDER BY date DESC
             "#,
-            days
+            &format!("{} days", days)
         )
         .fetch_all(pool)
         .await?;
@@ -146,12 +142,12 @@ impl MarketplaceStats {
                 MIN(l.price) as floor_price
             FROM nfts n
             LEFT JOIN sales s ON n.mint_address = s.nft_mint 
-                AND s.block_time >= CURRENT_DATE - INTERVAL '%d days'
+                AND s.block_time >= CURRENT_DATE - ($2)::interval
             LEFT JOIN listings l ON n.mint_address = l.nft_mint AND l.status = 'active'
             WHERE n.collection_id = $1
             "#,
             collection_id,
-            days
+            &format!("{} days", days)
         )
         .fetch_one(pool)
         .await?;

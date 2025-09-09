@@ -16,10 +16,8 @@ mod config;
 mod database;
 mod error;
 mod handlers;
-mod middleware;
 mod models;
 mod services;
-mod utils;
 
 use config::Config;
 use database::Database;

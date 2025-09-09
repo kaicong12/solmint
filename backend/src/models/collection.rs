@@ -213,7 +213,7 @@ impl Collection {
             CollectionStats,
             r#"
             SELECT 
-                $1 as collection_id,
+                c.id as collection_id,
                 MIN(l.price) as floor_price,
                 COALESCE(SUM(s.price), 0) as total_volume,
                 COUNT(s.id) as total_sales,
