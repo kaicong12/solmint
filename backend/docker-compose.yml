@@ -1,0 +1,75 @@
+version: "3.8"
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: solmint-postgres
+    environment:
+      POSTGRES_DB: solmint
+      POSTGRES_USER: solmint
+      POSTGRES_PASSWORD: solmint_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U solmint -d solmint"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: solmint-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # SolMint Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: solmint-backend
+    environment:
+      DATABASE_URL: postgresql://solmint:solmint_password@postgres:5432/solmint
+      REDIS_URL: redis://redis:6379
+      SOLANA_RPC_URL: https://api.mainnet-beta.solana.com
+      MARKETPLACE_PROGRAM_ID: 11111111111111111111111111111111
+      PORT: 8080
+      JWT_SECRET: your-super-secret-jwt-key-here
+      INDEXER_INTERVAL_SECONDS: 10
+      MAX_CONCURRENT_REQUESTS: 100
+      CACHE_TTL_SECONDS: 300
+      RUST_LOG: solmint_backend=debug,tower_http=debug
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  default:
+    name: solmint-network
