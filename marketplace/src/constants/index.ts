@@ -122,12 +122,48 @@ export const SUCCESS_MESSAGES = {
   METADATA_UPLOADED: "Metadata uploaded successfully",
 };
 
+// Backend API Configuration
+export const BACKEND_CONFIG = {
+  BASE_URL: process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080",
+  API_VERSION: "v1",
+};
+
 // API Endpoints
 export const API_ENDPOINTS = {
-  NFTS: "/api/nfts",
-  COLLECTIONS: "/api/collections",
-  LISTINGS: "/api/listings",
-  SALES: "/api/sales",
+  // Health
+  HEALTH: "/health",
+
+  // NFTs
+  NFTS: "/api/v1/nfts",
+  NFT_DETAILS: (mint: string) => `/api/v1/nfts/${mint}`,
+  NFT_ACTIVITIES: (mint: string) => `/api/v1/nfts/${mint}/activities`,
+
+  // Collections
+  COLLECTIONS: "/api/v1/collections",
+  COLLECTION_DETAILS: (id: string) => `/api/v1/collections/${id}`,
+  COLLECTION_NFTS: (id: string) => `/api/v1/collections/${id}/nfts`,
+
+  // Listings
+  LISTINGS: "/api/v1/listings",
+  LISTING_DETAILS: (id: string) => `/api/v1/listings/${id}`,
+
+  // Sales
+  SALES: "/api/v1/sales",
+
+  // Users
+  USER_PROFILE: (wallet: string) => `/api/v1/users/${wallet}`,
+  USER_FAVORITES: (wallet: string) => `/api/v1/users/${wallet}/favorites`,
+  USER_FAVORITE_NFT: (wallet: string, mint: string) =>
+    `/api/v1/users/${wallet}/favorites/${mint}`,
+
+  // Statistics
+  STATS: "/api/v1/stats",
+  STATS_DAILY: "/api/v1/stats/daily",
+
+  // Search
+  SEARCH: "/api/v1/search",
+
+  // Legacy endpoints (keeping for backward compatibility)
   METADATA: "/api/metadata",
   UPLOAD: "/api/upload",
   WALLET: "/api/wallet",

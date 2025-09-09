@@ -54,7 +54,7 @@ export interface NFT {
   image: string;
   attributes: NFTAttribute[];
   owner: string;
-  collection?: string;
+  collection_id?: string;
   creators: Creator[];
   royalty: number;
   verified: boolean;
@@ -73,6 +73,7 @@ export interface Creator {
 
 // Collection Types
 export interface Collection {
+  id: string;
   address: string;
   name: string;
   symbol: string;
@@ -82,8 +83,10 @@ export interface Collection {
   size: number;
   floor_price?: number;
   volume_24h?: number;
+  volume_total?: number;
   creators: Creator[];
   created_at: string;
+  updated_at: string;
 }
 
 // Marketplace Types
@@ -95,7 +98,9 @@ export interface Listing {
   currency: "SOL" | "USDC";
   status: "active" | "sold" | "cancelled";
   created_at: string;
+  updated_at: string;
   expires_at?: string;
+  nft?: NFT;
 }
 
 export interface Sale {
@@ -107,6 +112,59 @@ export interface Sale {
   currency: "SOL" | "USDC";
   transaction_signature: string;
   created_at: string;
+  nft?: NFT;
+}
+
+// Activity Types
+export interface Activity {
+  id: string;
+  nft_mint: string;
+  activity_type: "mint" | "transfer" | "list" | "sale" | "cancel" | "update";
+  from_address?: string;
+  to_address?: string;
+  price?: number;
+  currency?: "SOL" | "USDC";
+  transaction_signature: string;
+  created_at: string;
+  nft?: NFT;
+}
+
+// User Types
+export interface User {
+  wallet_address: string;
+  username?: string;
+  bio?: string;
+  avatar_url?: string;
+  twitter_handle?: string;
+  discord_handle?: string;
+  website_url?: string;
+  verified: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// Statistics Types
+export interface MarketplaceStats {
+  total_volume: number;
+  total_sales: number;
+  total_nfts: number;
+  total_collections: number;
+  total_users: number;
+  floor_price_avg: number;
+  volume_24h: number;
+  sales_24h: number;
+  unique_buyers_24h: number;
+  unique_sellers_24h: number;
+}
+
+export interface DailyStats {
+  date: string;
+  volume: number;
+  sales: number;
+  unique_buyers: number;
+  unique_sellers: number;
+  avg_price: number;
+  floor_price: number;
 }
 
 // Transaction Types

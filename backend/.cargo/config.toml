@@ -1,0 +1,5 @@
+[http]
+proxy = "http://teyk:CQu1FxSp@103.6.150.206:3128"
+
+[https]
+proxy = "http://teyk:CQu1FxSp@103.6.150.206:3128"

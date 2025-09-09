@@ -3,61 +3,36 @@
 import { useState, useEffect, useCallback } from "react";
 import { useWallet } from "@/hooks/useWallet";
 import { useMarketplace } from "@/hooks/useMarketplace";
+import { useBackendApi } from "@/hooks/useBackendApi";
 import { MarketplaceAccount } from "@/lib/solana/program";
+import { NFT, Listing } from "@/types";
 
 interface MarketplaceDashboardProps {
   className?: string;
 }
 
-// Mock NFT data for demonstration
-const mockNFTs = [
-  {
-    id: "1",
-    name: "Cyber Samurai #001",
-    creator: "CyberArtist",
-    price: "15.5",
-    image:
-      "https://via.placeholder.com/300x300/8B5CF6/FFFFFF?text=Cyber+Samurai",
-    rarity: "Legendary",
-    likes: 342,
-    views: 1245,
-    listed: true,
-  },
-  {
-    id: "2",
-    name: "Liquid Dreams #042",
-    creator: "AbstractMind",
-    price: "8.2",
-    image:
-      "https://via.placeholder.com/300x300/EC4899/FFFFFF?text=Liquid+Dreams",
-    rarity: "Epic",
-    likes: 189,
-    views: 876,
-    listed: true,
-  },
-  {
-    id: "3",
-    name: "Crystal Dragon #777",
-    creator: "DragonForge",
-    price: "23.1",
-    image:
-      "https://via.placeholder.com/300x300/06B6D4/FFFFFF?text=Crystal+Dragon",
-    rarity: "Legendary",
-    likes: 567,
-    views: 2341,
-    listed: true,
-  },
-];
-
 export const MarketplaceDashboard: React.FC<MarketplaceDashboardProps> = () => {
   const { connected, publicKey } = useWallet();
   const {
-    loading,
-    error,
+    loading: blockchainLoading,
+    error: blockchainError,
     initializeMarketplace,
     updateMarketplaceFee,
     getMarketplaceAccount,
   } = useMarketplace();
+
+  const {
+    loading: apiLoading,
+    error: apiError,
+    listings,
+    marketplaceStats,
+    loadListings,
+    loadMarketplaceStats,
+    checkHealth,
+    addToFavorites,
+    removeFromFavorites,
+    userFavorites,
+  } = useBackendApi();
 
   const [marketplaceData, setMarketplaceData] =
     useState<MarketplaceAccount | null>(null);
@@ -67,6 +42,10 @@ export const MarketplaceDashboard: React.FC<MarketplaceDashboardProps> = () => {
   >("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [newFeePercentage, setNewFeePercentage] = useState<number>(250);
+  const [backendHealthy, setBackendHealthy] = useState<boolean>(false);
+
+  const loading = blockchainLoading || apiLoading;
+  const error = blockchainError || apiError;
 
   const loadMarketplaceData = useCallback(async () => {
     if (!publicKey) return;
@@ -78,6 +57,23 @@ export const MarketplaceDashboard: React.FC<MarketplaceDashboardProps> = () => {
       console.error("Failed to load marketplace data:", err);
     }
   }, [publicKey, getMarketplaceAccount]);
+
+  // Load initial data
+  useEffect(() => {
+    const initializeData = async () => {
+      // Check backend health
+      const healthy = await checkHealth();
+      setBackendHealthy(healthy);
+
+      if (healthy) {
+        // Load marketplace data
+        await loadListings({ limit: 20 });
+        await loadMarketplaceStats();
+      }
+    };
+
+    initializeData();
+  }, [checkHealth, loadListings, loadMarketplaceStats]);
 
   useEffect(() => {
     if (connected && publicKey) {
@@ -105,21 +101,44 @@ export const MarketplaceDashboard: React.FC<MarketplaceDashboardProps> = () => {
     }
   };
 
-  const handleBuyNft = async (nftId: string) => {
-    // Mock implementation - in real app, you'd get the actual NFT data
+  const handleBuyNft = async (listing: Listing) => {
+    // This would integrate with the blockchain transaction
     setSuccessMessage(
-      `Buy functionality for NFT ${nftId} would be implemented here`
+      `Buy functionality for NFT ${listing.nft_mint} would be implemented here`
     );
   };
 
-  const filteredNFTs = mockNFTs.filter((nft) => {
+  const handleToggleFavorite = async (mint: string) => {
+    if (!connected) return;
+
+    const isFavorite = userFavorites.some((nft) => nft.mint === mint);
+
+    try {
+      if (isFavorite) {
+        await removeFromFavorites(mint);
+        setSuccessMessage("Removed from favorites");
+      } else {
+        await addToFavorites(mint);
+        setSuccessMessage("Added to favorites");
+      }
+    } catch (err) {
+      console.error("Failed to toggle favorite:", err);
+    }
+  };
+
+  const filteredListings = listings.filter((listing) => {
+    const nft = listing.nft;
+    if (!nft) return false;
+
     const matchesSearch =
       nft.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      nft.creator.toLowerCase().includes(searchQuery.toLowerCase());
+      nft.symbol.toLowerCase().includes(searchQuery.toLowerCase());
+
     const matchesFilter =
       activeFilter === "All" ||
-      (activeFilter === "Listed" && nft.listed) ||
-      (activeFilter === "Unlisted" && !nft.listed);
+      (activeFilter === "Listed" && listing.status === "active") ||
+      (activeFilter === "Unlisted" && listing.status !== "active");
+
     return matchesSearch && matchesFilter;
   });
 
@@ -324,68 +343,106 @@ export const MarketplaceDashboard: React.FC<MarketplaceDashboardProps> = () => {
             </div>
           </div>
 
+          {/* Backend Health Status */}
+          {!backendHealthy && (
+            <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-4 mb-6">
+              <p className="text-yellow-300 text-sm">
+                ⚠️ Backend API is not available. Showing limited functionality.
+              </p>
+            </div>
+          )}
+
+          {/* Marketplace Stats */}
+          {marketplaceStats && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-white/10 backdrop-blur-md rounded-lg p-4">
+                <div className="text-2xl font-bold text-cyan-400">
+                  {marketplaceStats.total_volume.toFixed(2)}
+                </div>
+                <div className="text-sm text-gray-300">Total Volume (SOL)</div>
+              </div>
+              <div className="bg-white/10 backdrop-blur-md rounded-lg p-4">
+                <div className="text-2xl font-bold text-green-400">
+                  {marketplaceStats.total_sales}
+                </div>
+                <div className="text-sm text-gray-300">Total Sales</div>
+              </div>
+              <div className="bg-white/10 backdrop-blur-md rounded-lg p-4">
+                <div className="text-2xl font-bold text-purple-400">
+                  {marketplaceStats.total_nfts}
+                </div>
+                <div className="text-sm text-gray-300">Total NFTs</div>
+              </div>
+              <div className="bg-white/10 backdrop-blur-md rounded-lg p-4">
+                <div className="text-2xl font-bold text-blue-400">
+                  {marketplaceStats.volume_24h.toFixed(2)}
+                </div>
+                <div className="text-sm text-gray-300">24h Volume (SOL)</div>
+              </div>
+            </div>
+          )}
+
           {/* NFT Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredNFTs.map((nft) => (
-              <div
-                key={nft.id}
-                className="bg-white/10 backdrop-blur-md rounded-2xl overflow-hidden hover:transform hover:scale-105 transition-all duration-300"
-              >
-                <div className="relative">
-                  <img
-                    src={nft.image}
-                    alt={nft.name}
-                    className="w-full h-64 object-cover"
-                  />
-                  <div className="absolute top-4 left-4">
-                    <span
-                      className={`px-2 py-1 rounded text-xs font-medium ${
-                        nft.rarity === "Legendary"
-                          ? "bg-purple-600 text-white"
-                          : "bg-blue-600 text-white"
-                      }`}
-                    >
-                      {nft.rarity}
-                    </span>
-                  </div>
-                  <div className="absolute top-4 right-4">
-                    <button className="p-2 bg-black/50 rounded-full hover:bg-black/70 transition-colors">
-                      <svg
-                        className="w-4 h-4 text-white"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </button>
-                  </div>
+            {loading && (
+              <div className="col-span-full text-center py-8">
+                <div className="text-white">Loading NFTs...</div>
+              </div>
+            )}
+
+            {!loading && filteredListings.length === 0 && (
+              <div className="col-span-full text-center py-8">
+                <div className="text-gray-400">
+                  No NFTs found matching your criteria.
                 </div>
+              </div>
+            )}
 
-                <div className="p-6">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h3 className="text-lg font-semibold text-white mb-1">
-                        {nft.name}
-                      </h3>
-                      <p className="text-sm text-gray-400">by {nft.creator}</p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-lg font-bold text-cyan-400">
-                        {nft.price} SOL
-                      </div>
-                    </div>
-                  </div>
+            {filteredListings.map((listing) => {
+              const nft = listing.nft;
+              if (!nft) return null;
 
-                  <div className="flex items-center justify-between mb-4 text-sm text-gray-400">
-                    <div className="flex items-center gap-4">
-                      <span className="flex items-center gap-1">
+              const isFavorite = userFavorites.some(
+                (fav) => fav.mint === nft.mint
+              );
+
+              return (
+                <div
+                  key={listing.id}
+                  className="bg-white/10 backdrop-blur-md rounded-2xl overflow-hidden hover:transform hover:scale-105 transition-all duration-300"
+                >
+                  <div className="relative">
+                    <img
+                      src={
+                        nft.image ||
+                        "https://via.placeholder.com/300x300/8B5CF6/FFFFFF?text=NFT"
+                      }
+                      alt={nft.name}
+                      className="w-full h-64 object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src =
+                          "https://via.placeholder.com/300x300/8B5CF6/FFFFFF?text=NFT";
+                      }}
+                    />
+                    <div className="absolute top-4 left-4">
+                      <span className="px-2 py-1 rounded text-xs font-medium bg-purple-600 text-white">
+                        {listing.status === "active" ? "Listed" : "Unlisted"}
+                      </span>
+                    </div>
+                    <div className="absolute top-4 right-4">
+                      <button
+                        onClick={() => handleToggleFavorite(nft.mint)}
+                        className={`p-2 rounded-full transition-colors ${
+                          isFavorite
+                            ? "bg-red-500/70 hover:bg-red-500/90"
+                            : "bg-black/50 hover:bg-black/70"
+                        }`}
+                      >
                         <svg
-                          className="w-4 h-4"
-                          fill="currentColor"
+                          className="w-4 h-4 text-white"
+                          fill={isFavorite ? "currentColor" : "none"}
+                          stroke="currentColor"
                           viewBox="0 0 20 20"
                         >
                           <path
@@ -394,35 +451,59 @@ export const MarketplaceDashboard: React.FC<MarketplaceDashboardProps> = () => {
                             clipRule="evenodd"
                           />
                         </svg>
-                        {nft.likes}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <svg
-                          className="w-4 h-4"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                          <path
-                            fillRule="evenodd"
-                            d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                        {nft.views}
-                      </span>
+                      </button>
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => handleBuyNft(nft.id)}
-                    className="w-full px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200 font-medium"
-                  >
-                    🛒 Buy Now
-                  </button>
+                  <div className="p-6">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h3 className="text-lg font-semibold text-white mb-1">
+                          {nft.name}
+                        </h3>
+                        <p className="text-sm text-gray-400">
+                          {nft.symbol} • {nft.mint.slice(0, 8)}...
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-bold text-cyan-400">
+                          {listing.price} {listing.currency}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between mb-4 text-sm text-gray-400">
+                      <div className="flex items-center gap-4">
+                        <span className="flex items-center gap-1">
+                          <svg
+                            className="w-4 h-4"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          {nft.verified ? "Verified" : "Unverified"}
+                        </span>
+                        <span className="text-xs">
+                          Listed:{" "}
+                          {new Date(listing.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => handleBuyNft(listing)}
+                      disabled={listing.status !== "active"}
+                      className="w-full px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium"
+                    >
+                      {listing.status === "active"
+                        ? "🛒 Buy Now"
+                        : "Not Available"}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
