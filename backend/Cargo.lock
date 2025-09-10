@@ -8801,6 +8801,7 @@ dependencies = [
  "anyhow",
  "axum",
  "bcrypt",
+ "borsh 1.5.7",
  "chrono",
  "config",
  "dotenvy",

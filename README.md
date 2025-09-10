@@ -209,13 +209,6 @@ npm run test:e2e
 
 The backend provides a comprehensive REST API. See [backend/README.md](backend/README.md) for detailed endpoint documentation.
 
-## 🆘 Support
-
-- **Documentation**: Check the individual README files in each directory
-- **Issues**: Report bugs and request features via GitHub Issues
-- **Discord**: Join our community Discord server
-- **Email**: Contact us at support@solmint.com
-
 ## 🗺️ Roadmap
 
 - [ ] Advanced analytics dashboard

@@ -29,6 +29,7 @@ solana-account-decoder = "3.0.1"
 solana-commitment-config = "3.0.0"
 anchor-client = "0.31.1"
 anchor-lang = "0.31.1"
+borsh = "1.0"
 
 # Caching
 redis = { version = "0.24", features = ["tokio-comp"] }
