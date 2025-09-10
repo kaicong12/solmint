@@ -1,252 +1,225 @@
-# Solana NFT Marketplace
+# SolMint - Solana NFT Marketplace
 
-A complete NFT marketplace built with native Rust Solana SDK and Next.js frontend, enabling users to list, buy, and manage NFT sales with configurable marketplace fees.
+A comprehensive NFT marketplace built on Solana with real-time indexing, advanced trading features, and marketplace fee management.
 
 ## 🚀 Features
 
-### Core Marketplace Operations
+- **Decentralized Trading**: Built on Solana for fast, low-cost transactions
+- **Real-time Indexing**: Automatic blockchain data synchronization
+- **Marketplace Fees**: Configurable fee structure with transparent calculations
+- **Advanced Search**: Filter and search NFTs by various criteria
+- **User Profiles**: Wallet-based user accounts with favorites and watchlists
+- **Analytics**: Comprehensive marketplace statistics and trading data
+- **Responsive Design**: Modern UI that works on all devices
 
-- **Initialize Marketplace**: Set up marketplace with configurable fee percentage
-- **List NFT**: List NFTs for sale with custom pricing
-- **Buy NFT**: Purchase listed NFTs with automatic fee calculation
-- **Cancel Listing**: Remove NFT listings from the marketplace
-- **Admin Functions**: Update marketplace fees (authority only)
+## 🏗️ Architecture
 
-### Advanced Features
-
-- **Fee Management**: Basis points system for precise fee calculation
-- **Volume Tracking**: Track total marketplace volume and sales count
-- **PDA-based Architecture**: Deterministic account addressing for scalability
-- **Error Handling**: Comprehensive error types for better UX
-- **Wallet Integration**: Seamless connection with Solana wallets
-
-## 🛠️ Setup & Installation
-
-### Prerequisites
-
-- Node.js 18+ and npm/yarn
-- Rust 1.70+ with Cargo
-- Solana CLI tools
-- A Solana wallet (Phantom, Solflare, etc.)
-
-### Backend Setup (Solana Program)
-
-1. **Navigate to the program directory**:
-
-   ```bash
-   cd solana-program
-   ```
-
-2. **Install dependencies**:
-
-   ```bash
-   cargo build
-   ```
-
-3. **Build the program**:
-
-   ```bash
-   cargo build-bpf
-   ```
-
-4. **Deploy to devnet** (optional):
-   ```bash
-   solana program deploy target/deploy/solana_program.so
-   ```
-
-### Frontend Setup
-
-1. **Navigate to the frontend directory**:
-
-   ```bash
-   cd marketplace
-   ```
-
-2. **Install dependencies**:
-
-   ```bash
-   npm install
-   ```
-
-3. **Set up environment variables**:
-   Create a `.env.local` file:
-
-   ```env
-   NEXT_PUBLIC_SOLANA_NETWORK=devnet
-   NEXT_PUBLIC_PROGRAM_ID=your_deployed_program_id
-   ```
-
-4. **Run the development server**:
-
-   ```bash
-   npm run dev
-   ```
-
-5. **Open your browser**:
-   Navigate to `http://localhost:3000`
-
-## 📖 Usage Guide
-
-### For Users
-
-1. **Connect Wallet**: Click the wallet button to connect your Solana wallet
-2. **Initialize Marketplace**: Set up the marketplace with your desired fee percentage
-3. **List NFT**: Enter your NFT mint address and desired price to list for sale
-4. **Buy NFT**: Browse listings and purchase NFTs directly
-5. **Manage Listings**: Cancel your active listings if needed
-
-### For Developers
-
-#### Program Interaction
-
-```typescript
-import { useMarketplace } from "@/hooks/useMarketplace";
-
-function MyComponent() {
-  const {
-    initializeMarketplace,
-    listNft,
-    buyNft,
-    cancelListing,
-    updateMarketplaceFee,
-  } = useMarketplace();
-
-  // Initialize marketplace
-  await initializeMarketplace(250); // 2.5% fee
-
-  // List an NFT
-  await listNft("NFT_MINT_ADDRESS", 1000000000); // 1 SOL
-
-  // Buy an NFT
-  await buyNft("NFT_MINT_ADDRESS");
-}
+```
+solmint/
+├── solana-program/     # Rust-based Solana smart contract
+├── backend/           # Rust API server with PostgreSQL
+├── marketplace/       # Next.js frontend application
+└── README.md         # This file
 ```
 
-#### Custom Instructions
+## 🛠️ Installation
 
-```typescript
-import { createListNftInstruction } from "@/lib/solana/program";
+### 1. Clone the Repository
 
-const instruction = createListNftInstruction(programId, nftMint, seller, price);
+```bash
+git clone https://github.com/kaicong12/solmint.git
+cd solmint
 ```
 
-## 🏛️ Program Architecture
-
-### Account Structure
-
-#### Marketplace Account
-
-```rust
-pub struct Marketplace {
-    pub is_initialized: bool,    // Initialization flag
-    pub authority: Pubkey,       // Marketplace authority
-    pub fee_percentage: u16,     // Fee in basis points (100 = 1%)
-    pub fee_recipient: Pubkey,   // Fee recipient address
-    pub total_volume: u64,       // Total trading volume
-    pub total_sales: u64,        // Total number of sales
-}
-```
-
-#### Listing Account
-
-```rust
-pub struct Listing {
-    pub is_active: bool,         // Listing status
-    pub seller: Pubkey,          // NFT seller
-    pub nft_mint: Pubkey,        // NFT mint address
-    pub price: u64,              // Price in lamports
-    pub created_at: i64,         // Creation timestamp
-}
-```
-
-### Program Derived Addresses (PDAs)
-
-- **Marketplace PDA**: `["marketplace", authority.key()]`
-- **Listing PDA**: `["listing", nft_mint.key()]`
-
-## 🔧 Configuration
-
-### Marketplace Settings
-
-- **Fee Percentage**: Configurable marketplace fee (in basis points)
-- **Fee Recipient**: Address that receives marketplace fees
-- **Authority**: Account with admin privileges
-
-### Network Configuration
-
-- **Devnet**: For development and testing
-- **Mainnet**: For production deployment
-- **Localnet**: For local development
-
-## 🧪 Testing
-
-### Unit Tests
+### 2. Set Up the Solana Program
 
 ```bash
 cd solana-program
+
+# Build the program
+cargo build-bpf
+
+# Deploy to devnet (optional)
+solana config set --url devnet
+solana program deploy target/deploy/solana_program.so
+```
+
+### 3. Set Up the Backend
+
+```bash
+cd ../backend
+
+# Install dependencies
+cargo build
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your database credentials and configuration
+
+# Run database migrations
+sqlx migrate run
+
+# Start the backend server
+cargo run
+```
+
+### 4. Set Up the Frontend
+
+```bash
+cd ../marketplace
+
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.local.example .env.local
+# Edit .env.local with your configuration
+
+# Start the development server
+npm run dev
+```
+
+## 🔧 Configuration
+
+### Backend Configuration (.env)
+
+```env
+DATABASE_URL=postgresql://username:password@localhost/solmint
+SOLANA_RPC_URL=https://api.devnet.solana.com
+SOLANA_WS_URL=wss://api.devnet.solana.com
+PROGRAM_ID=YourProgramIdHere
+SERVER_HOST=127.0.0.1
+SERVER_PORT=8080
+RUST_LOG=info
+```
+
+### Frontend Configuration (.env.local)
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8080
+NEXT_PUBLIC_SOLANA_NETWORK=devnet
+NEXT_PUBLIC_SOLANA_RPC_URL=https://api.devnet.solana.com
+NEXT_PUBLIC_PROGRAM_ID=YourProgramIdHere
+```
+
+## 🚀 Running the Application
+
+### Development Mode
+
+1. **Start the backend**:
+
+   ```bash
+   cd backend
+   cargo run
+   ```
+
+2. **Start the frontend**:
+
+   ```bash
+   cd marketplace
+   npm run dev
+   ```
+
+3. **Access the application**:
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:8080
+   - API Health Check: http://localhost:8080/health
+
+### Production Mode
+
+#### Using Docker
+
+```bash
+# Build and run with Docker Compose
+docker-compose up -d
+
+# Or build individual services
+cd backend
+docker build -t solmint-backend .
+docker run -p 8080:8080 solmint-backend
+
+cd ../marketplace
+docker build -t solmint-frontend .
+docker run -p 3000:3000 solmint-frontend
+```
+
+#### Manual Deployment
+
+```bash
+# Backend
+cd backend
+cargo build --release
+./target/release/backend
+
+# Frontend
+cd marketplace
+npm run build
+npm start
+```
+
+## 💰 Marketplace Fee System
+
+SolMint implements a transparent and configurable marketplace fee system:
+
+### How Fees Work
+
+- **Fee Structure**: Fees are calculated in basis points (1 basis point = 0.01%)
+- **Default Fee**: 250 basis points (2.5%)
+- **Maximum Fee**: 1000 basis points (10%)
+- **Fee Recipient**: Configurable marketplace authority
+
+### Fee Examples
+
+| Sale Price | Fee (2.5%) | Seller Receives |
+| ---------- | ---------- | --------------- |
+| 1 SOL      | 0.025 SOL  | 0.975 SOL       |
+| 10 SOL     | 0.25 SOL   | 9.75 SOL        |
+| 100 SOL    | 2.5 SOL    | 97.5 SOL        |
+
+### Managing Fees
+
+- **Admin Panel**: Update fees through the frontend admin interface
+- **Smart Contract**: Fees are enforced at the blockchain level
+- **Transparency**: All fee calculations are visible to users
+
+## 🧪 Testing
+
+### Backend Tests
+
+```bash
+cd backend
 cargo test
 ```
 
-### Integration Tests
+### Frontend Tests
 
 ```bash
 cd marketplace
 npm test
 ```
 
-### Manual Testing
+### Integration Tests
 
-1. Deploy program to devnet
-2. Run frontend locally
-3. Connect wallet and test all operations
-4. Verify transactions on Solana Explorer
+```bash
+# Run end-to-end tests
+npm run test:e2e
+```
 
-## 🚨 Error Handling
+## 📚 API Documentation
 
-The program includes comprehensive error handling:
-
-- `InvalidInstruction`: Malformed instruction data
-- `NotRentExempt`: Account doesn't meet rent exemption
-- `InvalidPrice`: Price validation failed
-- `InsufficientFunds`: Not enough funds for transaction
-- `ListingNotFound`: Listing doesn't exist
-- `ListingNotActive`: Listing is not active
-- `UnauthorizedSeller`: Seller authorization failed
-- `InvalidNftMint`: NFT mint validation failed
-- `MarketplaceNotInitialized`: Marketplace not set up
-- `Unauthorized`: Insufficient permissions
-
-## 🔐 Security Considerations
-
-- **PDA Verification**: All PDAs are properly verified
-- **Authority Checks**: Admin functions require proper authorization
-- **Account Validation**: All accounts are validated before operations
-- **Overflow Protection**: Safe math operations prevent overflows
-- **Rent Exemption**: All accounts maintain rent exemption
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License.
+The backend provides a comprehensive REST API. See [backend/README.md](backend/README.md) for detailed endpoint documentation.
 
 ## 🆘 Support
 
-For questions and support:
+- **Documentation**: Check the individual README files in each directory
+- **Issues**: Report bugs and request features via GitHub Issues
+- **Discord**: Join our community Discord server
+- **Email**: Contact us at support@solmint.com
 
-- Create an issue in the repository
-- Check existing documentation
-- Review the code examples
+## 🗺️ Roadmap
 
-## 🔗 Resources
-
-- [Solana Documentation](https://docs.solana.com/)
-- [Solana Program Library](https://spl.solana.com/)
-- [Next.js Documentation](https://nextjs.org/docs)
-- [Solana Wallet Adapter](https://github.com/solana-labs/wallet-adapter)
+- [ ] Advanced analytics dashboard
+- [ ] Multi-marketplace aggregation
+- [ ] NFT minting tools
+- [ ] Auction functionality
+- [ ] Cross-chain bridge integration
