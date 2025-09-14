@@ -1,11 +1,6 @@
-use crate::{
-    error::MarketplaceError,
-    instruction::MarketplaceInstruction,
-    state::{Listing, Marketplace},
-};
+use crate::{error::MarketplaceError, instruction::MarketplaceInstruction, state::Marketplace};
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
-    clock::Clock,
     entrypoint::ProgramResult,
     msg,
     program::{invoke, invoke_signed},
@@ -15,6 +10,11 @@ use solana_program::{
     rent::Rent,
     system_instruction,
     sysvar::Sysvar,
+};
+use spl_associated_token_account::instruction::create_associated_token_account;
+use spl_token::{
+    instruction::{initialize_mint, mint_to},
+    state::Mint,
 };
 
 pub struct Processor;
@@ -32,21 +32,13 @@ impl Processor {
                 msg!("Instruction: InitializeMarketplace");
                 Self::process_initialize_marketplace(program_id, accounts, fee_percentage)
             }
-            MarketplaceInstruction::ListNft { price } => {
-                msg!("Instruction: ListNft");
-                Self::process_list_nft(program_id, accounts, price)
-            }
-            MarketplaceInstruction::BuyNft => {
-                msg!("Instruction: BuyNft");
-                Self::process_buy_nft(program_id, accounts)
-            }
-            MarketplaceInstruction::CancelListing => {
-                msg!("Instruction: CancelListing");
-                Self::process_cancel_listing(program_id, accounts)
-            }
             MarketplaceInstruction::UpdateMarketplaceFee { new_fee_percentage } => {
                 msg!("Instruction: UpdateMarketplaceFee");
                 Self::process_update_marketplace_fee(program_id, accounts, new_fee_percentage)
+            }
+            MarketplaceInstruction::MintNft { name, symbol, uri } => {
+                msg!("Instruction: MintNft");
+                Self::process_mint_nft(program_id, accounts, name, symbol, uri)
             }
         }
     }
@@ -127,239 +119,6 @@ impl Processor {
         Ok(())
     }
 
-    fn process_list_nft(
-        program_id: &Pubkey,
-        accounts: &[AccountInfo],
-        price: u64,
-    ) -> ProgramResult {
-        let account_info_iter = &mut accounts.iter();
-        let seller_info = next_account_info(account_info_iter)?;
-        let listing_info = next_account_info(account_info_iter)?;
-        let nft_mint_info = next_account_info(account_info_iter)?;
-        let _seller_token_info = next_account_info(account_info_iter)?;
-        let marketplace_info = next_account_info(account_info_iter)?;
-        let system_program_info = next_account_info(account_info_iter)?;
-        let rent_info = next_account_info(account_info_iter)?;
-
-        // Validate price
-        if price == 0 {
-            return Err(MarketplaceError::InvalidPrice.into());
-        }
-
-        // Verify seller is signer
-        if !seller_info.is_signer {
-            return Err(ProgramError::MissingRequiredSignature);
-        }
-
-        // Verify marketplace is initialized
-        let marketplace = Marketplace::unpack(&marketplace_info.data.borrow())?;
-        if !marketplace.is_initialized() {
-            return Err(MarketplaceError::AccountNotInitialized.into());
-        }
-
-        // Verify listing account is uninitialized
-        if listing_info.owner != &solana_program::system_program::id() {
-            return Err(MarketplaceError::AccountAlreadyInitialized.into());
-        }
-
-        let rent = Rent::from_account_info(rent_info)?;
-        let clock = Clock::get()?;
-
-        // Calculate required space and rent for listing
-        let space = Listing::LEN;
-        let required_lamports = rent.minimum_balance(space);
-
-        // Derive listing PDA
-        let (listing_pda, listing_bump) =
-            crate::state::get_listing_pda(program_id, nft_mint_info.key, seller_info.key);
-
-        if listing_pda != *listing_info.key {
-            return Err(ProgramError::InvalidSeeds);
-        }
-
-        // Create listing account
-        invoke_signed(
-            &system_instruction::create_account(
-                seller_info.key,
-                listing_info.key,
-                required_lamports,
-                space as u64,
-                program_id,
-            ),
-            &[
-                seller_info.clone(),
-                listing_info.clone(),
-                system_program_info.clone(),
-            ],
-            &[&[
-                b"listing",
-                nft_mint_info.key.as_ref(),
-                seller_info.key.as_ref(),
-                &[listing_bump],
-            ]],
-        )?;
-
-        // Initialize listing data
-        let listing = Listing::new(
-            *seller_info.key,
-            *nft_mint_info.key,
-            price,
-            clock.unix_timestamp,
-            *marketplace_info.key,
-        );
-
-        Listing::pack(listing, &mut listing_info.data.borrow_mut())?;
-
-        msg!("NFT listed for sale at price: {} lamports", price);
-        Ok(())
-    }
-
-    fn process_buy_nft(_program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
-        let account_info_iter = &mut accounts.iter();
-        let buyer_info = next_account_info(account_info_iter)?;
-        let listing_info = next_account_info(account_info_iter)?;
-        let _buyer_token_info = next_account_info(account_info_iter)?;
-        let _seller_token_info = next_account_info(account_info_iter)?;
-        let seller_info = next_account_info(account_info_iter)?;
-        let marketplace_fee_info = next_account_info(account_info_iter)?;
-        let nft_mint_info = next_account_info(account_info_iter)?;
-        let marketplace_info = next_account_info(account_info_iter)?;
-        let _token_program_info = next_account_info(account_info_iter)?;
-        let system_program_info = next_account_info(account_info_iter)?;
-
-        // Verify buyer is signer
-        if !buyer_info.is_signer {
-            return Err(ProgramError::MissingRequiredSignature);
-        }
-
-        // Load listing data
-        let listing = Listing::unpack(&listing_info.data.borrow())?;
-        if !listing.is_initialized() {
-            return Err(MarketplaceError::AccountNotInitialized.into());
-        }
-
-        // Load marketplace data
-        let mut marketplace = Marketplace::unpack(&marketplace_info.data.borrow())?;
-        if !marketplace.is_initialized() {
-            return Err(MarketplaceError::AccountNotInitialized.into());
-        }
-
-        // Verify listing matches the NFT mint
-        if listing.nft_mint != *nft_mint_info.key {
-            return Err(MarketplaceError::ExpectedAmountMismatch.into());
-        }
-
-        // Verify seller matches listing
-        if listing.seller != *seller_info.key {
-            return Err(MarketplaceError::InvalidSeller.into());
-        }
-
-        // Calculate fees and seller proceeds
-        let marketplace_fee = marketplace.calculate_fee(listing.price)?;
-        let seller_proceeds = marketplace.calculate_seller_proceeds(listing.price)?;
-
-        // Verify buyer has sufficient funds
-        if buyer_info.lamports() < listing.price {
-            return Err(MarketplaceError::InsufficientFunds.into());
-        }
-
-        // Transfer payment to seller
-        invoke(
-            &system_instruction::transfer(buyer_info.key, seller_info.key, seller_proceeds),
-            &[
-                buyer_info.clone(),
-                seller_info.clone(),
-                system_program_info.clone(),
-            ],
-        )?;
-
-        // Transfer marketplace fee
-        if marketplace_fee > 0 {
-            invoke(
-                &system_instruction::transfer(
-                    buyer_info.key,
-                    marketplace_fee_info.key,
-                    marketplace_fee,
-                ),
-                &[
-                    buyer_info.clone(),
-                    marketplace_fee_info.clone(),
-                    system_program_info.clone(),
-                ],
-            )?;
-        }
-
-        // Note: In a production implementation, you would handle the NFT transfer here
-        // using the SPL Token program. For this example, we're focusing on the marketplace logic.
-        // The NFT transfer would typically involve:
-        // 1. Verifying token account ownership
-        // 2. Creating transfer instruction
-        // 3. Invoking the token program
-        msg!("NFT transfer would be handled here in production");
-
-        // Update marketplace statistics
-        marketplace.total_volume = marketplace
-            .total_volume
-            .checked_add(listing.price)
-            .ok_or(MarketplaceError::AmountOverflow)?;
-        marketplace.total_sales = marketplace
-            .total_sales
-            .checked_add(1)
-            .ok_or(MarketplaceError::AmountOverflow)?;
-
-        Marketplace::pack(marketplace, &mut marketplace_info.data.borrow_mut())?;
-
-        // Close listing account and return rent to seller
-        let listing_lamports = listing_info.lamports();
-        **listing_info.lamports.borrow_mut() = 0;
-        **seller_info.lamports.borrow_mut() = seller_info
-            .lamports()
-            .checked_add(listing_lamports)
-            .ok_or(MarketplaceError::AmountOverflow)?;
-
-        msg!("NFT sold for {} lamports", listing.price);
-        Ok(())
-    }
-
-    fn process_cancel_listing(_program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
-        let account_info_iter = &mut accounts.iter();
-        let seller_info = next_account_info(account_info_iter)?;
-        let listing_info = next_account_info(account_info_iter)?;
-        let nft_mint_info = next_account_info(account_info_iter)?;
-
-        // Verify seller is signer
-        if !seller_info.is_signer {
-            return Err(ProgramError::MissingRequiredSignature);
-        }
-
-        // Load listing data
-        let listing = Listing::unpack(&listing_info.data.borrow())?;
-        if !listing.is_initialized() {
-            return Err(MarketplaceError::AccountNotInitialized.into());
-        }
-
-        // Verify seller owns the listing
-        if listing.seller != *seller_info.key {
-            return Err(MarketplaceError::InvalidSeller.into());
-        }
-
-        // Verify NFT mint matches
-        if listing.nft_mint != *nft_mint_info.key {
-            return Err(MarketplaceError::ExpectedAmountMismatch.into());
-        }
-
-        // Close listing account and return rent to seller
-        let listing_lamports = listing_info.lamports();
-        **listing_info.lamports.borrow_mut() = 0;
-        **seller_info.lamports.borrow_mut() = seller_info
-            .lamports()
-            .checked_add(listing_lamports)
-            .ok_or(MarketplaceError::AmountOverflow)?;
-
-        msg!("Listing cancelled for NFT mint: {}", nft_mint_info.key);
-        Ok(())
-    }
-
     fn process_update_marketplace_fee(
         _program_id: &Pubkey,
         accounts: &[AccountInfo],
@@ -395,6 +154,117 @@ impl Processor {
         Marketplace::pack(marketplace, &mut marketplace_info.data.borrow_mut())?;
 
         msg!("Marketplace fee updated to: {}", new_fee_percentage);
+        Ok(())
+    }
+
+    fn process_mint_nft(
+        _program_id: &Pubkey,
+        accounts: &[AccountInfo],
+        name: String,
+        symbol: String,
+        uri: String,
+    ) -> ProgramResult {
+        let account_info_iter = &mut accounts.iter();
+        let mint_authority_info = next_account_info(account_info_iter)?;
+        let mint_info = next_account_info(account_info_iter)?;
+        let associated_token_account_info = next_account_info(account_info_iter)?;
+        let token_program_info = next_account_info(account_info_iter)?;
+        let associated_token_program_info = next_account_info(account_info_iter)?;
+        let system_program_info = next_account_info(account_info_iter)?;
+        let rent_info = next_account_info(account_info_iter)?;
+
+        // Verify mint authority is signer
+        if !mint_authority_info.is_signer {
+            return Err(ProgramError::MissingRequiredSignature);
+        }
+
+        // Verify mint account is owned by system program (uninitialized)
+        if mint_info.owner != &solana_program::system_program::id() {
+            return Err(MarketplaceError::InvalidAccountOwner.into());
+        }
+
+        let rent = Rent::from_account_info(rent_info)?;
+
+        // Calculate required space and rent for mint account
+        let mint_space = Mint::LEN;
+        let mint_rent = rent.minimum_balance(mint_space);
+
+        // Create mint account
+        invoke(
+            &system_instruction::create_account(
+                mint_authority_info.key,
+                mint_info.key,
+                mint_rent,
+                mint_space as u64,
+                token_program_info.key,
+            ),
+            &[
+                mint_authority_info.clone(),
+                mint_info.clone(),
+                system_program_info.clone(),
+            ],
+        )?;
+
+        // Initialize mint account with 0 decimals for NFT
+        invoke(
+            &initialize_mint(
+                token_program_info.key,
+                mint_info.key,
+                mint_authority_info.key,
+                Some(mint_authority_info.key), // freeze authority
+                0,                             // 0 decimals for NFT
+            )?,
+            &[
+                mint_info.clone(),
+                rent_info.clone(),
+                token_program_info.clone(),
+            ],
+        )?;
+
+        // Create associated token account
+        invoke(
+            &create_associated_token_account(
+                mint_authority_info.key,
+                mint_authority_info.key,
+                mint_info.key,
+                token_program_info.key,
+            ),
+            &[
+                mint_authority_info.clone(),
+                associated_token_account_info.clone(),
+                mint_authority_info.clone(),
+                mint_info.clone(),
+                system_program_info.clone(),
+                token_program_info.clone(),
+                associated_token_program_info.clone(),
+            ],
+        )?;
+
+        // Mint 1 token (NFT) to the associated token account
+        invoke(
+            &mint_to(
+                token_program_info.key,
+                mint_info.key,
+                associated_token_account_info.key,
+                mint_authority_info.key,
+                &[mint_authority_info.key],
+                1, // Mint 1 NFT
+            )?,
+            &[
+                mint_info.clone(),
+                associated_token_account_info.clone(),
+                mint_authority_info.clone(),
+                token_program_info.clone(),
+            ],
+        )?;
+
+        msg!(
+            "NFT minted successfully! Name: {}, Symbol: {}, URI: {}, Mint: {}",
+            name,
+            symbol,
+            uri,
+            mint_info.key
+        );
         Ok(())
     }
 }

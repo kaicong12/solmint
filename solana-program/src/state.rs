@@ -76,74 +76,7 @@ impl Pack for Marketplace {
     }
 }
 
-/// NFT listing account data
-#[derive(BorshSerialize, BorshDeserialize, Debug, Clone)]
-pub struct Listing {
-    pub is_initialized: bool,
-    pub seller: Pubkey,
-    pub nft_mint: Pubkey,
-    pub price: u64,
-    pub created_at: i64,
-    pub marketplace: Pubkey,
-}
-
-impl Listing {
-    pub const LEN: usize = 1 + 32 + 32 + 8 + 8 + 32; // 113 bytes
-
-    pub fn new(
-        seller: Pubkey,
-        nft_mint: Pubkey,
-        price: u64,
-        created_at: i64,
-        marketplace: Pubkey,
-    ) -> Self {
-        Self {
-            is_initialized: true,
-            seller,
-            nft_mint,
-            price,
-            created_at,
-            marketplace,
-        }
-    }
-}
-
-impl Sealed for Listing {}
-
-impl IsInitialized for Listing {
-    fn is_initialized(&self) -> bool {
-        self.is_initialized
-    }
-}
-
-impl Pack for Listing {
-    const LEN: usize = Self::LEN;
-
-    fn pack_into_slice(&self, dst: &mut [u8]) {
-        let data = self.try_to_vec().unwrap();
-        dst[..data.len()].copy_from_slice(&data);
-    }
-
-    fn unpack_from_slice(src: &[u8]) -> Result<Self, solana_program::program_error::ProgramError> {
-        Self::try_from_slice(src)
-            .map_err(|_| solana_program::program_error::ProgramError::InvalidAccountData)
-    }
-}
-
 /// Helper function to get marketplace PDA
 pub fn get_marketplace_pda(program_id: &Pubkey, authority: &Pubkey) -> (Pubkey, u8) {
     Pubkey::find_program_address(&[b"marketplace", authority.as_ref()], program_id)
-}
-
-/// Helper function to get listing PDA
-pub fn get_listing_pda(program_id: &Pubkey, nft_mint: &Pubkey, seller: &Pubkey) -> (Pubkey, u8) {
-    Pubkey::find_program_address(
-        &[b"listing", nft_mint.as_ref(), seller.as_ref()],
-        program_id,
-    )
-}
-
-/// Helper function to get marketplace fee account PDA
-pub fn get_marketplace_fee_pda(program_id: &Pubkey, marketplace: &Pubkey) -> (Pubkey, u8) {
-    Pubkey::find_program_address(&[b"fee", marketplace.as_ref()], program_id)
 }

@@ -18,49 +18,28 @@ pub enum MarketplaceInstruction {
         fee_percentage: u16, // Fee percentage in basis points (e.g., 250 = 2.5%)
     },
 
-    /// List an NFT for sale
-    ///
-    /// Accounts expected:
-    /// 0. `[signer]` NFT owner/seller
-    /// 1. `[writable]` Listing account to create
-    /// 2. `[]` NFT mint account
-    /// 3. `[writable]` NFT token account (seller's)
-    /// 4. `[]` Marketplace account
-    /// 5. `[]` System program
-    /// 6. `[]` Rent sysvar
-    ListNft {
-        price: u64, // Price in lamports
-    },
-
-    /// Buy an NFT
-    ///
-    /// Accounts expected:
-    /// 0. `[signer]` Buyer
-    /// 1. `[writable]` Listing account
-    /// 2. `[writable]` Buyer's token account
-    /// 3. `[writable]` Seller's token account
-    /// 4. `[writable]` Seller account (to receive payment)
-    /// 5. `[writable]` Marketplace fee account
-    /// 6. `[]` NFT mint account
-    /// 7. `[]` Marketplace account
-    /// 8. `[]` Token program
-    /// 9. `[]` System program
-    BuyNft,
-
-    /// Cancel an NFT listing
-    ///
-    /// Accounts expected:
-    /// 0. `[signer]` NFT owner/seller
-    /// 1. `[writable]` Listing account to close
-    /// 2. `[]` NFT mint account
-    CancelListing,
-
     /// Update marketplace fee
     ///
     /// Accounts expected:
     /// 0. `[signer]` Marketplace authority
     /// 1. `[writable]` Marketplace account
     UpdateMarketplaceFee { new_fee_percentage: u16 },
+
+    /// Mint NFT
+    ///
+    /// Accounts expected:
+    /// 0. `[signer]` Mint authority/fee payer
+    /// 1. `[writable]` Mint account to create
+    /// 2. `[writable]` Associated token account to create
+    /// 3. `[]` Token program
+    /// 4. `[]` Associated token program
+    /// 5. `[]` System program
+    /// 6. `[]` Rent sysvar
+    MintNft {
+        name: String,
+        symbol: String,
+        uri: String,
+    },
 }
 
 impl MarketplaceInstruction {
@@ -95,86 +74,6 @@ pub fn initialize_marketplace(
     }
 }
 
-/// Create a list NFT instruction
-pub fn list_nft(
-    program_id: &Pubkey,
-    seller: &Pubkey,
-    listing_account: &Pubkey,
-    nft_mint: &Pubkey,
-    seller_token_account: &Pubkey,
-    marketplace_account: &Pubkey,
-    price: u64,
-) -> Instruction {
-    let accounts = vec![
-        AccountMeta::new(*seller, true),
-        AccountMeta::new(*listing_account, false),
-        AccountMeta::new_readonly(*nft_mint, false),
-        AccountMeta::new(*seller_token_account, false),
-        AccountMeta::new_readonly(*marketplace_account, false),
-        AccountMeta::new_readonly(system_program::id(), false),
-        AccountMeta::new_readonly(solana_program::sysvar::rent::id(), false),
-    ];
-
-    Instruction {
-        program_id: *program_id,
-        accounts,
-        data: MarketplaceInstruction::ListNft { price }.pack(),
-    }
-}
-
-/// Create a buy NFT instruction
-pub fn buy_nft(
-    program_id: &Pubkey,
-    buyer: &Pubkey,
-    listing_account: &Pubkey,
-    buyer_token_account: &Pubkey,
-    seller_token_account: &Pubkey,
-    seller_account: &Pubkey,
-    marketplace_fee_account: &Pubkey,
-    nft_mint: &Pubkey,
-    marketplace_account: &Pubkey,
-    token_program: &Pubkey,
-) -> Instruction {
-    let accounts = vec![
-        AccountMeta::new(*buyer, true),
-        AccountMeta::new(*listing_account, false),
-        AccountMeta::new(*buyer_token_account, false),
-        AccountMeta::new(*seller_token_account, false),
-        AccountMeta::new(*seller_account, false),
-        AccountMeta::new(*marketplace_fee_account, false),
-        AccountMeta::new_readonly(*nft_mint, false),
-        AccountMeta::new_readonly(*marketplace_account, false),
-        AccountMeta::new_readonly(*token_program, false),
-        AccountMeta::new_readonly(system_program::id(), false),
-    ];
-
-    Instruction {
-        program_id: *program_id,
-        accounts,
-        data: MarketplaceInstruction::BuyNft.pack(),
-    }
-}
-
-/// Create a cancel listing instruction
-pub fn cancel_listing(
-    program_id: &Pubkey,
-    seller: &Pubkey,
-    listing_account: &Pubkey,
-    nft_mint: &Pubkey,
-) -> Instruction {
-    let accounts = vec![
-        AccountMeta::new(*seller, true),
-        AccountMeta::new(*listing_account, false),
-        AccountMeta::new_readonly(*nft_mint, false),
-    ];
-
-    Instruction {
-        program_id: *program_id,
-        accounts,
-        data: MarketplaceInstruction::CancelListing.pack(),
-    }
-}
-
 /// Create an update marketplace fee instruction
 pub fn update_marketplace_fee(
     program_id: &Pubkey,
@@ -191,5 +90,34 @@ pub fn update_marketplace_fee(
         program_id: *program_id,
         accounts,
         data: MarketplaceInstruction::UpdateMarketplaceFee { new_fee_percentage }.pack(),
+    }
+}
+
+/// Create a mint NFT instruction
+pub fn mint_nft(
+    program_id: &Pubkey,
+    mint_authority: &Pubkey,
+    mint_account: &Pubkey,
+    associated_token_account: &Pubkey,
+    token_program: &Pubkey,
+    associated_token_program: &Pubkey,
+    name: String,
+    symbol: String,
+    uri: String,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new(*mint_authority, true),
+        AccountMeta::new(*mint_account, false),
+        AccountMeta::new(*associated_token_account, false),
+        AccountMeta::new_readonly(*token_program, false),
+        AccountMeta::new_readonly(*associated_token_program, false),
+        AccountMeta::new_readonly(system_program::id(), false),
+        AccountMeta::new_readonly(solana_program::sysvar::rent::id(), false),
+    ];
+
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data: MarketplaceInstruction::MintNft { name, symbol, uri }.pack(),
     }
 }

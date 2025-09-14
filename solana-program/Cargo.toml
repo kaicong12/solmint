@@ -11,6 +11,7 @@ solana-program = "2.2.0"
 borsh = "0.10"
 thiserror = "1.0"
 spl-token = "4.0"
+spl-associated-token-account = "7.0.0"
 
 [features]
 no-entrypoint = []

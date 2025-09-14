@@ -1,4 +1,4 @@
 */target
 */Cargo.lock
-backend/.cargo/*
 .env
+.cargo/*
