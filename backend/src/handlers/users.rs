@@ -51,9 +51,14 @@ pub async fn get_user_favorites(
     State(state): State<AppState>,
     Path(wallet_address): Path<String>,
 ) -> Result<Json<Value>, AppError> {
-    let favorites = sqlx::query!(
+    let favorites = sqlx::query_as!(
+        crate::models::Nft,
         r#"
-        SELECT n.* FROM nfts n
+        SELECT n.id, n.mint_address, n.collection_id, n.name, n.description, n.image_url,
+               n.animation_url, n.external_url, n.attributes, n.creator_address,
+               n.current_owner, n.is_compressed as "is_compressed!", n.rarity_rank, n.rarity_score,
+               n.created_at as "created_at!", n.updated_at as "updated_at!"
+        FROM nfts n
         JOIN user_favorites uf ON n.mint_address = uf.nft_mint
         JOIN users u ON uf.user_id = u.id
         WHERE u.wallet_address = $1

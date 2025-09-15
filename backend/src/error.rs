@@ -54,60 +54,22 @@ pub enum AppError {
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         let (status, error_message) = match self {
-            AppError::Database(ref e) => {
-                tracing::error!("Database error: {:?}", e);
-                (StatusCode::INTERNAL_SERVER_ERROR, "Database error")
-            }
-            AppError::Redis(ref e) => {
-                tracing::error!("Redis error: {:?}", e);
-                (StatusCode::INTERNAL_SERVER_ERROR, "Cache error")
-            }
-            AppError::SolanaClient(ref e) => {
-                tracing::error!("Solana client error: {:?}", e);
-                (StatusCode::BAD_GATEWAY, "Blockchain service error")
-            }
-            AppError::Serialization(ref e) => {
-                tracing::error!("Serialization error: {:?}", e);
+            AppError::Database(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Database error"),
+            AppError::Redis(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Cache error"),
+            AppError::SolanaClient(_) => (StatusCode::BAD_GATEWAY, "Blockchain service error"),
+            AppError::Serialization(_) => {
                 (StatusCode::INTERNAL_SERVER_ERROR, "Serialization error")
             }
-            AppError::Io(ref e) => {
-                tracing::error!("IO error: {:?}", e);
-                (StatusCode::INTERNAL_SERVER_ERROR, "IO error")
-            }
-            AppError::ConfigError(ref msg) => {
-                tracing::error!("Configuration error: {}", msg);
-                (StatusCode::INTERNAL_SERVER_ERROR, "Configuration error")
-            }
-            AppError::Validation(ref msg) => {
-                tracing::warn!("Validation error: {}", msg);
-                (StatusCode::BAD_REQUEST, msg.as_str())
-            }
-            AppError::Authentication(ref msg) => {
-                tracing::warn!("Authentication error: {}", msg);
-                (StatusCode::UNAUTHORIZED, msg.as_str())
-            }
-            AppError::Authorization(ref msg) => {
-                tracing::warn!("Authorization error: {}", msg);
-                (StatusCode::FORBIDDEN, msg.as_str())
-            }
-            AppError::NotFound(ref msg) => {
-                tracing::info!("Not found: {}", msg);
-                (StatusCode::NOT_FOUND, msg.as_str())
-            }
-            AppError::BadRequest(ref msg) => {
-                tracing::warn!("Bad request: {}", msg);
-                (StatusCode::BAD_REQUEST, msg.as_str())
-            }
-            AppError::Internal(ref msg) => {
-                tracing::error!("Internal error: {}", msg);
-                (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
-            }
-            AppError::RateLimit => {
-                tracing::warn!("Rate limit exceeded");
-                (StatusCode::TOO_MANY_REQUESTS, "Rate limit exceeded")
-            }
+            AppError::Io(_) => (StatusCode::INTERNAL_SERVER_ERROR, "IO error"),
+            AppError::ConfigError(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Configuration error"),
+            AppError::Validation(ref msg) => (StatusCode::BAD_REQUEST, msg.as_str()),
+            AppError::Authentication(ref msg) => (StatusCode::UNAUTHORIZED, msg.as_str()),
+            AppError::Authorization(ref msg) => (StatusCode::FORBIDDEN, msg.as_str()),
+            AppError::NotFound(ref msg) => (StatusCode::NOT_FOUND, msg.as_str()),
+            AppError::BadRequest(ref msg) => (StatusCode::BAD_REQUEST, msg.as_str()),
+            AppError::Internal(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error"),
+            AppError::RateLimit => (StatusCode::TOO_MANY_REQUESTS, "Rate limit exceeded"),
             AppError::ServiceUnavailable(ref msg) => {
-                tracing::error!("Service unavailable: {}", msg);
                 (StatusCode::SERVICE_UNAVAILABLE, msg.as_str())
             }
         };
