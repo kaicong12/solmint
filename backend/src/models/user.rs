@@ -40,7 +40,10 @@ pub struct UpdateUserRequest {
 }
 
 impl User {
-    pub async fn create(pool: &PgPool, req: CreateUserRequest) -> Result<Self, crate::error::AppError> {
+    pub async fn create(
+        pool: &PgPool,
+        req: CreateUserRequest,
+    ) -> Result<Self, crate::error::AppError> {
         let user = sqlx::query_as!(
             User,
             r#"
@@ -49,7 +52,11 @@ impl User {
                 twitter_handle, discord_handle
             )
             VALUES ($1, $2, $3, $4, $5, $6, $7)
-            RETURNING *
+            RETURNING id, wallet_address, username, email, bio, avatar_url, 
+                     twitter_handle, discord_handle, 
+                     verified as "verified!", 
+                     created_at as "created_at!", 
+                     updated_at as "updated_at!"
             "#,
             req.wallet_address,
             req.username,
@@ -65,10 +72,20 @@ impl User {
         Ok(user)
     }
 
-    pub async fn find_by_wallet(pool: &PgPool, wallet_address: &str) -> Result<Option<Self>, crate::error::AppError> {
+    pub async fn find_by_wallet(
+        pool: &PgPool,
+        wallet_address: &str,
+    ) -> Result<Option<Self>, crate::error::AppError> {
         let user = sqlx::query_as!(
             User,
-            "SELECT * FROM users WHERE wallet_address = $1",
+            r#"
+            SELECT id, wallet_address, username, email, bio, avatar_url, 
+                   twitter_handle, discord_handle, 
+                   verified as "verified!", 
+                   created_at as "created_at!", 
+                   updated_at as "updated_at!"
+            FROM users WHERE wallet_address = $1
+            "#,
             wallet_address
         )
         .fetch_optional(pool)
@@ -94,7 +111,11 @@ impl User {
                 discord_handle = COALESCE($7, discord_handle),
                 updated_at = NOW()
             WHERE wallet_address = $1
-            RETURNING *
+            RETURNING id, wallet_address, username, email, bio, avatar_url, 
+                     twitter_handle, discord_handle, 
+                     verified as "verified!", 
+                     created_at as "created_at!", 
+                     updated_at as "updated_at!"
             "#,
             wallet_address,
             req.username,

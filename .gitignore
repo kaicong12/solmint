@@ -2,3 +2,4 @@
 */Cargo.lock
 .env
 .cargo/*
+backend/.sqlx/*

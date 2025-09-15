@@ -5,7 +5,6 @@ use std::sync::Arc;
 
 pub mod health;
 pub mod nfts;
-pub mod search;
 pub mod users;
 
 use crate::config::Config;

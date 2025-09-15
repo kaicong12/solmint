@@ -42,7 +42,7 @@ pub struct CreateNftRequest {
     pub attributes: Option<Vec<NftAttribute>>,
     pub creator_address: String,
     pub current_owner: String,
-    pub is_compressed: Option<bool>,
+    pub is_compressed: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -93,7 +93,10 @@ impl Nft {
                 current_owner, is_compressed
             )
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-            RETURNING *
+            RETURNING id, mint_address, collection_id, name, description, image_url,
+                     animation_url, external_url, attributes, creator_address,
+                     current_owner, is_compressed as "is_compressed!", rarity_rank, rarity_score,
+                     created_at as "created_at!", updated_at as "updated_at!"
             "#,
             req.mint_address,
             req.collection_id,
@@ -105,7 +108,7 @@ impl Nft {
             attributes_json,
             req.creator_address,
             req.current_owner,
-            req.is_compressed.unwrap_or(false)
+            req.is_compressed
         )
         .fetch_one(pool)
         .await?;
@@ -119,7 +122,13 @@ impl Nft {
     ) -> Result<Option<Self>, crate::error::AppError> {
         let nft = sqlx::query_as!(
             Nft,
-            "SELECT * FROM nfts WHERE mint_address = $1",
+            r#"
+            SELECT id, mint_address, collection_id, name, description, image_url,
+                   animation_url, external_url, attributes, creator_address,
+                   current_owner, is_compressed as "is_compressed!", rarity_rank, rarity_score,
+                   created_at as "created_at!", updated_at as "updated_at!"
+            FROM nfts WHERE mint_address = $1
+            "#,
             mint_address
         )
         .fetch_optional(pool)
@@ -153,7 +162,10 @@ impl Nft {
                 rarity_score = COALESCE($10, rarity_score),
                 updated_at = NOW()
             WHERE mint_address = $1
-            RETURNING *
+            RETURNING id, mint_address, collection_id, name, description, image_url,
+                     animation_url, external_url, attributes, creator_address,
+                     current_owner, is_compressed as "is_compressed!", rarity_rank, rarity_score,
+                     created_at as "created_at!", updated_at as "updated_at!"
             "#,
             mint_address,
             req.name,
@@ -193,7 +205,10 @@ impl Nft {
 
         let mut query_builder = sqlx::QueryBuilder::new(
             r#"
-            SELECT DISTINCT n.* FROM nfts n
+            SELECT DISTINCT n.id, n.mint_address, n.collection_id, n.name, n.description, n.image_url,
+                   n.animation_url, n.external_url, n.attributes, n.creator_address,
+                   n.current_owner, n.is_compressed, n.rarity_rank, n.rarity_score,
+                   n.created_at, n.updated_at FROM nfts n
             LEFT JOIN listings l ON n.mint_address = l.nft_mint AND l.status = 'active'
             WHERE 1=1
             "#,
