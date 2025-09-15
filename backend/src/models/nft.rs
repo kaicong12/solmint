@@ -58,7 +58,7 @@ pub struct UpdateNftRequest {
     pub rarity_score: Option<rust_decimal::Decimal>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct NftListQuery {
     pub collection_id: Option<Uuid>,
     pub owner: Option<String>,
@@ -75,9 +75,15 @@ pub struct NftListQuery {
 }
 
 impl Nft {
-    pub async fn create(pool: &PgPool, req: CreateNftRequest) -> Result<Self, crate::error::AppError> {
-        let attributes_json = req.attributes.map(|attrs| serde_json::to_value(attrs)).transpose()?;
-        
+    pub async fn create(
+        pool: &PgPool,
+        req: CreateNftRequest,
+    ) -> Result<Self, crate::error::AppError> {
+        let attributes_json = req
+            .attributes
+            .map(|attrs| serde_json::to_value(attrs))
+            .transpose()?;
+
         let nft = sqlx::query_as!(
             Nft,
             r#"
@@ -107,7 +113,10 @@ impl Nft {
         Ok(nft)
     }
 
-    pub async fn find_by_mint(pool: &PgPool, mint_address: &str) -> Result<Option<Self>, crate::error::AppError> {
+    pub async fn find_by_mint(
+        pool: &PgPool,
+        mint_address: &str,
+    ) -> Result<Option<Self>, crate::error::AppError> {
         let nft = sqlx::query_as!(
             Nft,
             "SELECT * FROM nfts WHERE mint_address = $1",
@@ -124,8 +133,11 @@ impl Nft {
         mint_address: &str,
         req: UpdateNftRequest,
     ) -> Result<Self, crate::error::AppError> {
-        let attributes_json = req.attributes.map(|attrs| serde_json::to_value(attrs)).transpose()?;
-        
+        let attributes_json = req
+            .attributes
+            .map(|attrs| serde_json::to_value(attrs))
+            .transpose()?;
+
         let nft = sqlx::query_as!(
             Nft,
             r#"
@@ -160,17 +172,20 @@ impl Nft {
         Ok(nft)
     }
 
-    pub async fn list(pool: &PgPool, query: NftListQuery) -> Result<Vec<Self>, crate::error::AppError> {
+    pub async fn list(
+        pool: &PgPool,
+        query: NftListQuery,
+    ) -> Result<Vec<Self>, crate::error::AppError> {
         let limit = query.limit.unwrap_or(20).min(100);
         let offset = query.page.unwrap_or(0) * limit;
-        
+
         let sort_column = match query.sort_by.as_deref() {
             Some("price") => "l.price",
             Some("rarity") => "n.rarity_rank",
             Some("created_at") => "n.created_at",
             _ => "n.created_at",
         };
-        
+
         let sort_order = match query.sort_order.as_deref() {
             Some("asc") => "ASC",
             _ => "DESC",
@@ -181,7 +196,7 @@ impl Nft {
             SELECT DISTINCT n.* FROM nfts n
             LEFT JOIN listings l ON n.mint_address = l.nft_mint AND l.status = 'active'
             WHERE 1=1
-            "#
+            "#,
         );
 
         if let Some(collection_id) = query.collection_id {
@@ -242,7 +257,7 @@ impl Nft {
             SELECT COUNT(DISTINCT n.id) FROM nfts n
             LEFT JOIN listings l ON n.mint_address = l.nft_mint AND l.status = 'active'
             WHERE 1=1
-            "#
+            "#,
         );
 
         if let Some(collection_id) = query.collection_id {
@@ -270,10 +285,7 @@ impl Nft {
             query_builder.push_bind(max_price);
         }
 
-        let count: (i64,) = query_builder
-            .build_query_as()
-            .fetch_one(pool)
-            .await?;
+        let count: (i64,) = query_builder.build_query_as().fetch_one(pool).await?;
 
         Ok(count.0)
     }

@@ -7,7 +7,7 @@ use serde_json::{json, Value};
 use super::AppState;
 use crate::{
     error::AppError,
-    models::{Activity, ActivityQuery, Nft, NftListQuery},
+    models::{Nft, NftListQuery},
 };
 
 pub async fn list_nfts(
@@ -38,20 +38,5 @@ pub async fn get_nft(
 
     Ok(Json(json!({
         "nft": nft
-    })))
-}
-
-pub async fn get_nft_activities(
-    State(state): State<AppState>,
-    Path(mint): Path<String>,
-    Query(query): Query<ActivityQuery>,
-) -> Result<Json<Value>, AppError> {
-    let mut activity_query = query;
-    activity_query.nft_mint = Some(mint);
-
-    let activities = Activity::list(&state.db, activity_query).await?;
-
-    Ok(Json(json!({
-        "activities": activities
     })))
 }
