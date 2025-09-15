@@ -211,6 +211,8 @@ The backend provides a comprehensive REST API. See [backend/README.md](backend/R
 
 ## 🗺️ Roadmap
 
+- [ ] Users favorite
+- [ ] Price Alert and User watchlist
 - [ ] Advanced analytics dashboard
 - [ ] Multi-marketplace aggregation
 - [ ] NFT minting tools
