@@ -225,37 +225,6 @@ export function MarketplaceHeader({ onSearch }: MarketplaceHeaderProps) {
             </Row>
           </div>
 
-          {/* Creator Royalties */}
-          <div>
-            <Title level={4}>Creator Royalties</Title>
-            <Card size="small">
-              <Row justify="space-between" style={{ marginBottom: 8 }}>
-                <Text strong>Royalty Range</Text>
-                <Text strong>0% - 10%</Text>
-              </Row>
-              <Text
-                type="secondary"
-                style={{ display: "block", marginBottom: 12 }}
-              >
-                Set by the original creator. Paid from sale proceeds on every
-                secondary sale.
-              </Text>
-              <List
-                size="small"
-                dataSource={[
-                  "Default: 5% for new collections",
-                  "Maximum: 10% to ensure fair pricing",
-                  "Supports ongoing creator compensation",
-                ]}
-                renderItem={(item) => (
-                  <List.Item style={{ padding: "4px 0" }}>
-                    <Text type="secondary">• {item}</Text>
-                  </List.Item>
-                )}
-              />
-            </Card>
-          </div>
-
           {/* Why These Fees */}
           <div>
             <Title level={4}>Why These Fees?</Title>

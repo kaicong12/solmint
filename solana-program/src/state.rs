@@ -11,12 +11,10 @@ pub struct Marketplace {
     pub authority: Pubkey,
     pub fee_percentage: u16, // Fee percentage in basis points (e.g., 250 = 2.5%)
     pub fee_recipient: Pubkey,
-    pub total_volume: u64,
-    pub total_sales: u64,
 }
 
 impl Marketplace {
-    pub const LEN: usize = 1 + 32 + 2 + 32 + 8 + 8; // 83 bytes
+    pub const LEN: usize = 1 + 32 + 2 + 32; // 65 bytes
 
     pub fn new(authority: Pubkey, fee_percentage: u16, fee_recipient: Pubkey) -> Self {
         Self {
@@ -24,8 +22,6 @@ impl Marketplace {
             authority,
             fee_percentage,
             fee_recipient,
-            total_volume: 0,
-            total_sales: 0,
         }
     }
 
