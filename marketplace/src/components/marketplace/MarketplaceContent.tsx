@@ -6,8 +6,19 @@ import { MarketplaceSidebar } from "./MarketplaceSidebar";
 import { NFTGrid } from "./NFTGrid";
 import { api } from "@/lib/api/client";
 import { NFT, Collection } from "@/types";
+import { MarketplaceStatus } from "@/lib/solana/marketplace";
+import { Layout, Typography, Statistic, Row, Col } from "antd";
 
-export function MarketplaceContent() {
+const { Content, Sider } = Layout;
+const { Title, Paragraph } = Typography;
+
+interface MarketplaceContentProps {
+  marketplaceStatus: MarketplaceStatus;
+}
+
+export function MarketplaceContent({
+  marketplaceStatus,
+}: Readonly<MarketplaceContentProps>) {
   const [nfts, setNfts] = useState<NFT[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,39 +92,76 @@ export function MarketplaceContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div style={{ minHeight: "100vh", backgroundColor: "#f5f5f5" }}>
       {/* Header */}
-      <MarketplaceHeader onSearch={handleSearch} />
+      <MarketplaceHeader
+        onSearch={handleSearch}
+        marketplaceStatus={marketplaceStatus}
+      />
 
-      <div className="flex">
+      <div style={{ display: "flex" }}>
         {/* Sidebar */}
-        <MarketplaceSidebar
-          collections={collections}
-          onCollectionFilter={handleCollectionFilter}
-          onPriceFilter={handlePriceFilter}
-          onStatusFilter={handleStatusFilter}
-        />
+        <div
+          style={{
+            width: "280px",
+            backgroundColor: "#fff",
+            borderRight: "1px solid #f0f0f0",
+            minHeight: "calc(100vh - 64px)",
+            position: "sticky",
+            top: "64px",
+            overflow: "auto",
+          }}
+        >
+          <MarketplaceSidebar
+            collections={collections}
+            onCollectionFilter={handleCollectionFilter}
+            onPriceFilter={handlePriceFilter}
+            onStatusFilter={handleStatusFilter}
+          />
+        </div>
 
         {/* Main Content */}
-        <main className="flex-1 p-6">
-          <div className="max-w-7xl mx-auto">
+        <div
+          style={{
+            flex: 1,
+            padding: "24px",
+            backgroundColor: "#f5f5f5",
+            minHeight: "calc(100vh - 64px)",
+          }}
+        >
+          <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
             {/* Page Header */}
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            <div style={{ marginBottom: "32px" }}>
+              <Title level={2} style={{ marginBottom: "8px" }}>
                 Discover NFTs
-              </h1>
-              <p className="text-gray-600">
+              </Title>
+              <Paragraph style={{ fontSize: "16px", color: "#8c8c8c" }}>
                 Explore unique digital assets on Solana
-              </p>
-              <div className="mt-4 text-sm text-gray-500">
-                {filteredNfts.length} items
-              </div>
+              </Paragraph>
+
+              {/* Statistics */}
+              <Row gutter={16} style={{ marginTop: "16px" }}>
+                <Col>
+                  <Statistic
+                    title="Total Items"
+                    value={filteredNfts.length}
+                    style={{ textAlign: "left" }}
+                  />
+                </Col>
+                <Col>
+                  <Statistic
+                    title="Collections"
+                    value={collections.length}
+                    style={{ textAlign: "left" }}
+                  />
+                </Col>
+              </Row>
             </div>
 
             {/* NFT Grid */}
             <NFTGrid nfts={filteredNfts} loading={loading} />
           </div>
-        </main>
+        </div>
       </div>
     </div>
   );

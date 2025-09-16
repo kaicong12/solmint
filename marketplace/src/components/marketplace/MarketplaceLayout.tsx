@@ -74,5 +74,5 @@ export function MarketplaceLayout() {
   }
 
   // Show marketplace content if everything is ready
-  return <MarketplaceContent />;
+  return <MarketplaceContent marketplaceStatus={marketplaceStatus} />;
 }

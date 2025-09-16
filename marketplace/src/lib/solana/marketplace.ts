@@ -3,14 +3,16 @@ import {
   PublicKey,
   Transaction,
   VersionedTransaction,
-  sendAndConfirmTransaction,
 } from "@solana/web3.js";
 import {
   getMarketplacePDA,
   createInitializeMarketplaceInstruction,
   MarketplaceAccount,
+  MarketplaceData,
+  MarketplaceSchema,
 } from "./program";
 import { ADMIN_CONFIG } from "@/constants";
+import { deserialize } from "borsh";
 
 type SendTransactionFunction = (
   transaction: Transaction | VersionedTransaction,
@@ -63,7 +65,7 @@ export class MarketplaceService {
       const data = accountInfo.data;
 
       if (data.length < 67) {
-        // Minimum size for Marketplace account
+        // Minimum size for Marketplace account (1 + 32 + 2 + 32 = 67 bytes)
         return {
           isInitialized: false,
           isLoading: false,
@@ -72,11 +74,14 @@ export class MarketplaceService {
         };
       }
 
-      // Parse the borsh-serialized data
-      // Note: This is a simplified parsing - in production, use proper borsh deserialization
-      const isInitialized = data[0] === 1;
+      // Deserialize the account data using borsh
+      const deserializedData = deserialize(
+        MarketplaceSchema,
+        MarketplaceData,
+        data
+      );
 
-      if (!isInitialized) {
+      if (!deserializedData.isInitialized) {
         return {
           isInitialized: false,
           isLoading: false,
@@ -85,21 +90,13 @@ export class MarketplaceService {
         };
       }
 
-      // Extract authority (32 bytes starting at offset 1)
-      const authorityBytes = data.slice(1, 33);
-      const authority = new PublicKey(authorityBytes);
-
-      // Extract fee percentage (2 bytes starting at offset 33)
-      const feePercentage = data.readUInt16LE(33);
-
-      // Extract fee recipient (32 bytes starting at offset 35)
-      const feeRecipientBytes = data.slice(35, 67);
-      const feeRecipient = new PublicKey(feeRecipientBytes);
+      const authority = new PublicKey(deserializedData.authority);
+      const feeRecipient = new PublicKey(deserializedData.feeRecipient);
 
       const marketplaceAccount: MarketplaceAccount = {
         isInitialized: true,
         authority,
-        feePercentage,
+        feePercentage: deserializedData.feePercentage,
         feeRecipient,
         totalVolume: BigInt(0), // These would need to be parsed if stored in the account
         totalSales: BigInt(0),

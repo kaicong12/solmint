@@ -6,7 +6,6 @@ import { Checkbox, Slider, Collapse, Typography, Space } from "antd";
 import { FilterOutlined } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
-const { Panel } = Collapse;
 
 interface MarketplaceSidebarProps {
   collections: Collection[];
@@ -20,7 +19,7 @@ export function MarketplaceSidebar({
   onCollectionFilter,
   onPriceFilter,
   onStatusFilter,
-}: MarketplaceSidebarProps) {
+}: Readonly<MarketplaceSidebarProps>) {
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState({ min: 0, max: 20 });
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
@@ -57,102 +56,120 @@ export function MarketplaceSidebar({
   const allCollections = [...collections.slice(0, 5), ...mockCollections];
 
   return (
-    <aside className="w-80 bg-white border-r border-gray-200 h-screen sticky top-16 overflow-y-auto">
-      <div className="p-6">
-        {/* Filters Header */}
-        <Space align="center" style={{ marginBottom: 24 }}>
-          <FilterOutlined style={{ color: "#6b7280" }} />
-          <Title level={4} style={{ margin: 0 }}>
-            Filters
-          </Title>
-        </Space>
+    <div style={{ padding: "24px" }}>
+      {/* Filters Header */}
+      <Space align="center" style={{ marginBottom: 24 }}>
+        <FilterOutlined style={{ color: "#6b7280" }} />
+        <Title level={4} style={{ margin: 0 }}>
+          Filters
+        </Title>
+      </Space>
 
-        <Collapse
-          defaultActiveKey={["collections", "priceRange", "status"]}
-          ghost
-          size="small"
-        >
-          {/* Collections Filter */}
-          <Panel header="Collections" key="collections">
-            <Space direction="vertical" style={{ width: "100%" }}>
-              {allCollections.map((collection) => (
+      <Collapse
+        defaultActiveKey={["collections", "priceRange", "status"]}
+        ghost
+        size="small"
+        items={[
+          {
+            key: "collections",
+            label: "Collections",
+            children: (
+              <Space direction="vertical" style={{ width: "100%" }}>
+                {allCollections.map((collection) => (
+                  <Checkbox
+                    key={collection.id}
+                    checked={selectedCollections.includes(collection.id)}
+                    onChange={(e) =>
+                      handleCollectionChange(collection.id, e.target.checked)
+                    }
+                  >
+                    {collection.name}
+                  </Checkbox>
+                ))}
+              </Space>
+            ),
+          },
+          {
+            key: "priceRange",
+            label: "Price Range (SOL)",
+            children: (
+              <Space direction="vertical" style={{ width: "100%" }}>
+                <Slider
+                  range
+                  min={0}
+                  max={20}
+                  step={0.1}
+                  value={[priceRange.min, priceRange.max]}
+                  onChange={(value) => handlePriceChange(value[0], value[1])}
+                  styles={{
+                    track: { backgroundColor: "#9333ea" },
+                    handle: { borderColor: "#9333ea" },
+                  }}
+                />
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Text type="secondary">{priceRange.min} SOL</Text>
+                  <Text type="secondary">{priceRange.max} SOL</Text>
+                </div>
+              </Space>
+            ),
+          },
+          {
+            key: "status",
+            label: "Status",
+            children: (
+              <Space direction="vertical">
                 <Checkbox
-                  key={collection.id}
-                  checked={selectedCollections.includes(collection.id)}
+                  checked={selectedStatuses.includes("listed")}
                   onChange={(e) =>
-                    handleCollectionChange(collection.id, e.target.checked)
+                    handleStatusChange("listed", e.target.checked)
                   }
                 >
-                  {collection.name}
+                  Listed for Sale
                 </Checkbox>
-              ))}
-            </Space>
-          </Panel>
-
-          {/* Price Range Filter */}
-          <Panel header="Price Range (SOL)" key="priceRange">
-            <Space direction="vertical" style={{ width: "100%" }}>
-              <Slider
-                range
-                min={0}
-                max={20}
-                step={0.1}
-                value={[priceRange.min, priceRange.max]}
-                onChange={(value) => handlePriceChange(value[0], value[1])}
-                styles={{
-                  track: { backgroundColor: "#9333ea" },
-                  handle: { borderColor: "#9333ea" },
-                }}
-              />
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Text type="secondary">{priceRange.min} SOL</Text>
-                <Text type="secondary">{priceRange.max} SOL</Text>
-              </div>
-            </Space>
-          </Panel>
-
-          {/* Status Filter */}
-          <Panel header="Status" key="status">
-            <Space direction="vertical">
-              <Checkbox
-                checked={selectedStatuses.includes("listed")}
-                onChange={(e) => handleStatusChange("listed", e.target.checked)}
-              >
-                Listed for Sale
-              </Checkbox>
-              <Checkbox
-                checked={selectedStatuses.includes("auction")}
-                onChange={(e) =>
-                  handleStatusChange("auction", e.target.checked)
-                }
-              >
-                On Auction
-              </Checkbox>
-              <Checkbox
-                checked={selectedStatuses.includes("offers")}
-                onChange={(e) => handleStatusChange("offers", e.target.checked)}
-              >
-                Has Offers
-              </Checkbox>
-            </Space>
-          </Panel>
-
-          {/* Attributes Filter */}
-          <Panel header="Attributes" key="attributes">
-            <Text type="secondary">Select a collection to view attributes</Text>
-          </Panel>
-
-          {/* Rarity Filter */}
-          <Panel header="Rarity" key="rarity">
-            <Space direction="vertical">
-              <Checkbox>Common</Checkbox>
-              <Checkbox>Rare</Checkbox>
-              <Checkbox>Epic</Checkbox>
-              <Checkbox>Legendary</Checkbox>
-            </Space>
-          </Panel>
-        </Collapse>
-      </div>
-    </aside>
+                <Checkbox
+                  checked={selectedStatuses.includes("auction")}
+                  onChange={(e) =>
+                    handleStatusChange("auction", e.target.checked)
+                  }
+                >
+                  On Auction
+                </Checkbox>
+                <Checkbox
+                  checked={selectedStatuses.includes("offers")}
+                  onChange={(e) =>
+                    handleStatusChange("offers", e.target.checked)
+                  }
+                >
+                  Has Offers
+                </Checkbox>
+              </Space>
+            ),
+          },
+          {
+            key: "attributes",
+            label: "Attributes",
+            children: (
+              <Text type="secondary">
+                Select a collection to view attributes
+              </Text>
+            ),
+          },
+          {
+            key: "rarity",
+            label: "Rarity",
+            children: (
+              <Space direction="vertical">
+                <Checkbox>Common</Checkbox>
+                <Checkbox>Rare</Checkbox>
+                <Checkbox>Epic</Checkbox>
+                <Checkbox>Legendary</Checkbox>
+              </Space>
+            ),
+          },
+        ]}
+      />
+    </div>
   );
 }

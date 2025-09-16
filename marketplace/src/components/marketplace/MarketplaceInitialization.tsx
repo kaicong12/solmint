@@ -14,7 +14,7 @@ interface MarketplaceInitializationProps {
 
 export function MarketplaceInitialization({
   onInitialized,
-}: MarketplaceInitializationProps) {
+}: Readonly<MarketplaceInitializationProps>) {
   const { connection } = useConnection();
   const { publicKey, sendTransaction } = useWallet();
   const [marketplaceStatus, setMarketplaceStatus] = useState<MarketplaceStatus>(

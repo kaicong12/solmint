@@ -68,6 +68,41 @@ export class UpdateMarketplaceFeeData {
   }
 }
 
+// Define the borsh schema for Marketplace account
+export class MarketplaceData {
+  isInitialized: boolean;
+  authority: Uint8Array;
+  feePercentage: number;
+  feeRecipient: Uint8Array;
+
+  constructor(fields: {
+    isInitialized: boolean;
+    authority: Uint8Array;
+    feePercentage: number;
+    feeRecipient: Uint8Array;
+  }) {
+    this.isInitialized = fields.isInitialized;
+    this.authority = fields.authority;
+    this.feePercentage = fields.feePercentage;
+    this.feeRecipient = fields.feeRecipient;
+  }
+}
+
+export const MarketplaceSchema = new Map([
+  [
+    MarketplaceData,
+    {
+      kind: "struct",
+      fields: [
+        ["isInitialized", "u8"],
+        ["authority", [32]],
+        ["feePercentage", "u16"],
+        ["feeRecipient", [32]],
+      ],
+    },
+  ],
+]);
+
 // Borsh schemas
 const InitializeMarketplaceSchema = new Map([
   [
