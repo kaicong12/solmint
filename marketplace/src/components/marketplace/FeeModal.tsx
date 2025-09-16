@@ -8,7 +8,6 @@ import {
   Divider,
   Card,
   Row,
-  Col,
   List,
   Spin,
   Alert,

@@ -93,7 +93,7 @@ const mockNFTs: MockNFT[] = [
   },
 ];
 
-export function NFTGrid({ nfts, loading }: NFTGridProps) {
+export function NFTGrid({ loading }: NFTGridProps) {
   const [favorites, setFavorites] = useState<string[]>([]);
 
   const toggleFavorite = (id: string) => {

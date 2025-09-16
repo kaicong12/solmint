@@ -258,6 +258,16 @@ impl Processor {
             ],
         )?;
 
+        // Emit event for indexer
+        msg!(
+            "NFT_MINTED:{{\"mint\":\"{}\",\"name\":\"{}\",\"symbol\":\"{}\",\"uri\":\"{}\",\"creator\":\"{}\"}}",
+            mint_info.key,
+            name,
+            symbol,
+            uri,
+            mint_authority_info.key
+        );
+
         msg!(
             "NFT minted successfully! Name: {}, Symbol: {}, URI: {}, Mint: {}",
             name,

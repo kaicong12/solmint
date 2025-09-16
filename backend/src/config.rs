@@ -9,9 +9,10 @@ pub struct Config {
     pub port: u16,
     pub jwt_secret: String,
     pub marketplace_program_id: String,
-    pub indexer_interval_seconds: u64,
-    pub max_concurrent_requests: usize,
-    pub cache_ttl_seconds: u64,
+    pub s3_bucket: String,
+    pub s3_region: String,
+    pub aws_access_key_id: Option<String>,
+    pub aws_secret_access_key: Option<String>,
 }
 
 impl Config {
@@ -32,18 +33,10 @@ impl Config {
             jwt_secret: env::var("JWT_SECRET").unwrap_or_else(|_| "your-secret-key".to_string()),
             marketplace_program_id: env::var("MARKETPLACE_PROGRAM_ID")
                 .unwrap_or_else(|_| "11111111111111111111111111111111".to_string()),
-            indexer_interval_seconds: env::var("INDEXER_INTERVAL_SECONDS")
-                .unwrap_or_else(|_| "10".to_string())
-                .parse()
-                .unwrap_or(10),
-            max_concurrent_requests: env::var("MAX_CONCURRENT_REQUESTS")
-                .unwrap_or_else(|_| "100".to_string())
-                .parse()
-                .unwrap_or(100),
-            cache_ttl_seconds: env::var("CACHE_TTL_SECONDS")
-                .unwrap_or_else(|_| "300".to_string())
-                .parse()
-                .unwrap_or(300),
+            s3_bucket: env::var("S3_BUCKET").unwrap_or_else(|_| "solmint-nft-assets".to_string()),
+            s3_region: env::var("S3_REGION").unwrap_or_else(|_| "us-east-1".to_string()),
+            aws_access_key_id: env::var("AWS_ACCESS_KEY_ID").ok(),
+            aws_secret_access_key: env::var("AWS_SECRET_ACCESS_KEY").ok(),
         })
     }
 }

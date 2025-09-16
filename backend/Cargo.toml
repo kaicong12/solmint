@@ -72,5 +72,10 @@ image = "0.24"
 # File upload
 multer = "3.0"
 
+# AWS SDK
+# aws-config = "1.1"
+# aws-sdk-s3 = "1.15"
+# aws-types = "1.1"
+
 [dev-dependencies]
 tower-test = "0.4"

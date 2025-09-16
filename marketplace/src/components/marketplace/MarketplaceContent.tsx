@@ -7,9 +7,8 @@ import { NFTGrid } from "./NFTGrid";
 import { api } from "@/lib/api/client";
 import { NFT, Collection } from "@/types";
 import { MarketplaceStatus } from "@/lib/solana/marketplace";
-import { Layout, Typography, Statistic, Row, Col } from "antd";
+import { Typography, Statistic, Row, Col } from "antd";
 
-const { Content, Sider } = Layout;
 const { Title, Paragraph } = Typography;
 
 interface MarketplaceContentProps {
