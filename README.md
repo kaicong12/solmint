@@ -12,16 +12,6 @@ A comprehensive NFT marketplace built on Solana with real-time indexing, advance
 - **Analytics**: Comprehensive marketplace statistics and trading data
 - **Responsive Design**: Modern UI that works on all devices
 
-## 🏗️ Architecture
-
-```
-solmint/
-├── solana-program/     # Rust-based Solana smart contract
-├── backend/           # Rust API server with PostgreSQL
-├── marketplace/       # Next.js frontend application
-└── README.md         # This file
-```
-
 ## 🛠️ Installation
 
 ### 1. Clone the Repository
@@ -79,29 +69,6 @@ cp .env.local.example .env.local
 npm run dev
 ```
 
-## 🔧 Configuration
-
-### Backend Configuration (.env)
-
-```env
-DATABASE_URL=postgresql://username:password@localhost/solmint
-SOLANA_RPC_URL=https://api.devnet.solana.com
-SOLANA_WS_URL=wss://api.devnet.solana.com
-PROGRAM_ID=YourProgramIdHere
-SERVER_HOST=127.0.0.1
-SERVER_PORT=8080
-RUST_LOG=info
-```
-
-### Frontend Configuration (.env.local)
-
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8080
-NEXT_PUBLIC_SOLANA_NETWORK=devnet
-NEXT_PUBLIC_SOLANA_RPC_URL=https://api.devnet.solana.com
-NEXT_PUBLIC_PROGRAM_ID=YourProgramIdHere
-```
-
 ## 🚀 Running the Application
 
 ### Development Mode
@@ -141,68 +108,6 @@ docker run -p 8080:8080 solmint-backend
 cd ../marketplace
 docker build -t solmint-frontend .
 docker run -p 3000:3000 solmint-frontend
-```
-
-#### Manual Deployment
-
-```bash
-# Backend
-cd backend
-cargo build --release
-./target/release/backend
-
-# Frontend
-cd marketplace
-npm run build
-npm start
-```
-
-## 💰 Marketplace Fee System
-
-SolMint implements a transparent and configurable marketplace fee system:
-
-### How Fees Work
-
-- **Fee Structure**: Fees are calculated in basis points (1 basis point = 0.01%)
-- **Default Fee**: 250 basis points (2.5%)
-- **Maximum Fee**: 1000 basis points (10%)
-- **Fee Recipient**: Configurable marketplace authority
-
-### Fee Examples
-
-| Sale Price | Fee (2.5%) | Seller Receives |
-| ---------- | ---------- | --------------- |
-| 1 SOL      | 0.025 SOL  | 0.975 SOL       |
-| 10 SOL     | 0.25 SOL   | 9.75 SOL        |
-| 100 SOL    | 2.5 SOL    | 97.5 SOL        |
-
-### Managing Fees
-
-- **Admin Panel**: Update fees through the frontend admin interface
-- **Smart Contract**: Fees are enforced at the blockchain level
-- **Transparency**: All fee calculations are visible to users
-
-## 🧪 Testing
-
-### Backend Tests
-
-```bash
-cd backend
-cargo test
-```
-
-### Frontend Tests
-
-```bash
-cd marketplace
-npm test
-```
-
-### Integration Tests
-
-```bash
-# Run end-to-end tests
-npm run test:e2e
 ```
 
 ## 📚 API Documentation

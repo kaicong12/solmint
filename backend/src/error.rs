@@ -26,29 +26,11 @@ pub enum AppError {
     #[error("Configuration error: {0}")]
     ConfigError(String),
 
-    #[error("Validation error: {0}")]
-    Validation(String),
-
-    #[error("Authentication error: {0}")]
-    Authentication(String),
-
-    #[error("Authorization error: {0}")]
-    Authorization(String),
-
     #[error("Not found: {0}")]
     NotFound(String),
 
     #[error("Bad request: {0}")]
     BadRequest(String),
-
-    #[error("Internal server error: {0}")]
-    Internal(String),
-
-    #[error("Rate limit exceeded")]
-    RateLimit,
-
-    #[error("Service unavailable: {0}")]
-    ServiceUnavailable(String),
 }
 
 impl IntoResponse for AppError {
@@ -62,16 +44,8 @@ impl IntoResponse for AppError {
             }
             AppError::Io(_) => (StatusCode::INTERNAL_SERVER_ERROR, "IO error"),
             AppError::ConfigError(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Configuration error"),
-            AppError::Validation(ref msg) => (StatusCode::BAD_REQUEST, msg.as_str()),
-            AppError::Authentication(ref msg) => (StatusCode::UNAUTHORIZED, msg.as_str()),
-            AppError::Authorization(ref msg) => (StatusCode::FORBIDDEN, msg.as_str()),
             AppError::NotFound(ref msg) => (StatusCode::NOT_FOUND, msg.as_str()),
             AppError::BadRequest(ref msg) => (StatusCode::BAD_REQUEST, msg.as_str()),
-            AppError::Internal(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error"),
-            AppError::RateLimit => (StatusCode::TOO_MANY_REQUESTS, "Rate limit exceeded"),
-            AppError::ServiceUnavailable(ref msg) => {
-                (StatusCode::SERVICE_UNAVAILABLE, msg.as_str())
-            }
         };
 
         let body = Json(json!({
@@ -94,21 +68,10 @@ impl AppError {
             AppError::Serialization(_) => "serialization_error",
             AppError::Io(_) => "io_error",
             AppError::ConfigError(_) => "config_error",
-            AppError::Validation(_) => "validation_error",
-            AppError::Authentication(_) => "authentication_error",
-            AppError::Authorization(_) => "authorization_error",
             AppError::NotFound(_) => "not_found",
             AppError::BadRequest(_) => "bad_request",
-            AppError::Internal(_) => "internal_error",
-            AppError::RateLimit => "rate_limit",
-            AppError::ServiceUnavailable(_) => "service_unavailable",
         }
     }
-}
-
-// Helper function to create validation errors
-pub fn validation_error(msg: &str) -> AppError {
-    AppError::Validation(msg.to_string())
 }
 
 // Helper function to create not found errors

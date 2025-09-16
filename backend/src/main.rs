@@ -51,11 +51,35 @@ async fn main() -> Result<(), AppError> {
         .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
         .allow_headers([CONTENT_TYPE]);
 
+    // Start websocket indexer in background
+    let indexer_db = db.pool().clone();
+    let indexer_config = config.clone();
+    tokio::spawn(async move {
+        if let Err(e) =
+            services::websocket_indexer::start_websocket_indexer(indexer_db, indexer_config).await
+        {
+            println!("Websocket indexer failed: {:?}", e);
+        }
+    });
+
     // Build the application router
     let app = Router::new()
         .route("/health", get(handlers::health::health_check))
         .route("/api/v1/nfts", get(handlers::nfts::list_nfts))
         .route("/api/v1/nfts/{mint}", get(handlers::nfts::get_nft))
+        .route("/api/nft/mint", post(handlers::nfts::mint_nft))
+        .route(
+            "/api/nft/send-transaction",
+            post(handlers::nfts::send_transaction),
+        )
+        .route(
+            "/api/upload/presigned",
+            post(handlers::upload::generate_presigned_url),
+        )
+        .route(
+            "/api/upload/metadata",
+            post(handlers::upload::upload_metadata),
+        )
         .route("/api/v1/users/{wallet}", get(handlers::users::get_user))
         .route(
             "/api/v1/users/{wallet}",

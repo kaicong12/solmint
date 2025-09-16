@@ -27,9 +27,4 @@ impl Database {
         println!("Database migrations completed successfully");
         Ok(())
     }
-
-    pub async fn health_check(&self) -> Result<(), AppError> {
-        sqlx::query("SELECT 1").execute(&self.pool).await?;
-        Ok(())
-    }
 }

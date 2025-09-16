@@ -18,14 +18,13 @@ import {
   SearchOutlined,
   PlusOutlined,
   InfoCircleOutlined,
-  UserOutlined,
-  WalletOutlined,
 } from "@ant-design/icons";
 import { FeeModal } from "./FeeModal";
+import { CreateNFTModal } from "./CreateNFTModal";
 import { MarketplaceStatus } from "@/lib/solana/marketplace";
 
 const { Header } = Layout;
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 interface MarketplaceHeaderProps {
   onSearch: (query: string) => void;
@@ -39,6 +38,7 @@ export function MarketplaceHeader({
   const { connected } = useWallet();
   const [searchQuery, setSearchQuery] = useState("");
   const [showFeesModal, setShowFeesModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -146,6 +146,7 @@ export function MarketplaceHeader({
             <Button
               type="primary"
               icon={<PlusOutlined />}
+              onClick={() => setShowCreateModal(true)}
               style={{
                 backgroundColor: "#722ed1",
                 borderColor: "#722ed1",
@@ -180,6 +181,16 @@ export function MarketplaceHeader({
         marketplaceAccount={marketplaceStatus.marketplaceAccount}
         isLoading={marketplaceStatus.isLoading}
         error={marketplaceStatus.error}
+      />
+
+      {/* Create NFT Modal */}
+      <CreateNFTModal
+        open={showCreateModal}
+        onCancel={() => setShowCreateModal(false)}
+        onSuccess={() => {
+          // Optionally refresh NFT list or show success message
+          console.log("NFT created successfully!");
+        }}
       />
     </>
   );
