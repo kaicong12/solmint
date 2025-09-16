@@ -9,7 +9,7 @@ import { serialize } from "borsh";
 
 // Program ID - This would be your deployed program ID
 export const MARKETPLACE_PROGRAM_ID = new PublicKey(
-  "11111111111111111111111111111111"
+  "GsVxXr66fe6nas8gvTUG6VuaK3DayuBQq3h5ri3FxyP8"
 ); // Replace with actual program ID
 
 // Instruction enum
@@ -67,6 +67,41 @@ export class UpdateMarketplaceFeeData {
     this.new_fee_percentage = new_fee_percentage;
   }
 }
+
+// Define the borsh schema for Marketplace account
+export class MarketplaceData {
+  isInitialized: boolean;
+  authority: Uint8Array;
+  feePercentage: number;
+  feeRecipient: Uint8Array;
+
+  constructor(fields: {
+    isInitialized: boolean;
+    authority: Uint8Array;
+    feePercentage: number;
+    feeRecipient: Uint8Array;
+  }) {
+    this.isInitialized = fields.isInitialized;
+    this.authority = fields.authority;
+    this.feePercentage = fields.feePercentage;
+    this.feeRecipient = fields.feeRecipient;
+  }
+}
+
+export const MarketplaceSchema = new Map([
+  [
+    MarketplaceData,
+    {
+      kind: "struct",
+      fields: [
+        ["isInitialized", "u8"],
+        ["authority", [32]],
+        ["feePercentage", "u16"],
+        ["feeRecipient", [32]],
+      ],
+    },
+  ],
+]);
 
 // Borsh schemas
 const InitializeMarketplaceSchema = new Map([
