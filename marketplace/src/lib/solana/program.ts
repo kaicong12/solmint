@@ -9,7 +9,7 @@ import { serialize } from "borsh";
 
 // Program ID - This would be your deployed program ID
 export const MARKETPLACE_PROGRAM_ID = new PublicKey(
-  "11111111111111111111111111111111"
+  "GsVxXr66fe6nas8gvTUG6VuaK3DayuBQq3h5ri3FxyP8"
 ); // Replace with actual program ID
 
 // Instruction enum

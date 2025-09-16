@@ -37,6 +37,15 @@ export const PROGRAM_IDS = {
   SYSTEM_PROGRAM: "11111111111111111111111111111111",
   RENT_PROGRAM: "SysvarRent111111111111111111111111111111111",
   CLOCK_PROGRAM: "SysvarC1ock11111111111111111111111111111111",
+  MARKETPLACE_PROGRAM: "GsVxXr66fe6nas8gvTUG6VuaK3DayuBQq3h5ri3FxyP8",
+};
+
+// Admin Configuration
+export const ADMIN_CONFIG = {
+  // Replace with the actual admin public key
+  ADMIN_PUBLIC_KEY:
+    process.env.NEXT_PUBLIC_ADMIN_PUBLIC_KEY ||
+    "Hogn3Pe9hxLbnSgsTSZnWkTSxVwvq7M3b4PXu7VB9Rth",
 };
 
 // Transaction Configuration
