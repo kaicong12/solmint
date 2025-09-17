@@ -8,10 +8,10 @@ use solana_client::{
     pubsub_client::PubsubClient,
     rpc_config::{RpcTransactionLogsConfig, RpcTransactionLogsFilter},
 };
-use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey};
+use solana_commitment_config::CommitmentConfig;
+use solana_sdk::pubkey::Pubkey;
 use sqlx::PgPool;
-use std::{str::FromStr, sync::Arc};
-use tokio::sync::mpsc;
+use std::str::FromStr;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NftMintedEvent {
@@ -58,16 +58,16 @@ impl WebsocketIndexer {
             self.program_id
         );
 
-        let (mut notifications, _unsubscribe) = PubsubClient::logs_subscribe(
+        let (_subscription_client, subscription_receiver) = PubsubClient::logs_subscribe(
             ws_url,
             RpcTransactionLogsFilter::Mentions(vec![self.program_id.to_string()]),
             RpcTransactionLogsConfig {
                 commitment: Some(CommitmentConfig::confirmed()),
             },
         )
-        .map_err(|e| AppError::SolanaError(format!("Failed to subscribe to logs: {}", e)))?;
+        .map_err(|e| AppError::SolanaPubsub(e))?;
 
-        while let Some(log) = notifications.next().await {
+        while let Ok(log) = subscription_receiver.recv() {
             if let Err(e) = self.process_log_entry(&log).await {
                 println!("Error processing log entry: {:?}", e);
             }
@@ -78,10 +78,11 @@ impl WebsocketIndexer {
 
     async fn process_log_entry(
         &self,
-        log: &solana_client::rpc_response::RpcLogsResponse,
+        log: &solana_client::rpc_response::Response<solana_client::rpc_response::RpcLogsResponse>,
     ) -> Result<(), AppError> {
         // Look for NFT_MINTED events in the logs
-        for log_line in &log.value.logs {
+        let logs = &log.value.logs;
+        for log_line in logs {
             if log_line.contains("NFT_MINTED:") {
                 if let Some(event_data) = self.extract_nft_event(log_line) {
                     self.handle_nft_minted_event(event_data, &log.value.signature)
@@ -229,7 +230,7 @@ impl WebsocketIndexer {
                     Ok((None, None, None))
                 }
             }
-            Err(e) => Ok((None, None, None)),
+            Err(_e) => Ok((None, None, None)),
         }
     }
 }

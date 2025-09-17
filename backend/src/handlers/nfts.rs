@@ -2,11 +2,13 @@ use axum::{
     extract::{Path, Query, State},
     Json,
 };
+use borsh::{BorshDeserialize, BorshSerialize};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+use solana_account_decoder::parse_token::spl_token_ids;
 use solana_sdk::{
+    signature::Keypair,
     pubkey::Pubkey,
-    signature::{Keypair, Signature},
     signer::Signer,
     transaction::Transaction,
 };
@@ -15,8 +17,17 @@ use std::str::FromStr;
 use super::AppState;
 use crate::{
     error::AppError,
-    models::{CreateNftRequest, Nft, NftListQuery},
+    models::{Nft, NftListQuery},
 };
+
+#[derive(BorshSerialize, BorshDeserialize, Debug, Clone)]
+enum MarketplaceInstruction {
+    MintNft {
+        name: String,
+        symbol: String,
+        uri: String,
+    },
+}
 
 pub async fn list_nfts(
     State(state): State<AppState>,
@@ -91,23 +102,37 @@ pub async fn mint_nft(
         .map_err(|_| AppError::ConfigError("Invalid program ID".to_string()))?;
 
     // Get associated token account
-    let associated_token_account =
-        spl_associated_token_account::get_associated_token_address(&creator_pubkey, &mint_address);
+    let associated_token_account = Pubkey::find_program_address(
+        &[
+            &creator_pubkey.as_ref(), // owner
+            &mint_address.as_ref(), // mint
+        ],
+        &program_id, // program_id
+    ).0;
+
+    let mut instruction_data = vec![]; 
+    MarketplaceInstruction::MintNft {
+        name: req.name.clone(),
+        symbol: req.symbol.clone(),
+        uri: req.uri.clone(),
+    }.serialize(&mut instruction_data)?;
 
     // Create mint NFT instruction
+    let token_program_id = solana_program::pubkey::Pubkey::new_from_array(spl_token::id().to_bytes());
+    let associatede_token_account_id = solana_program::pubkey::Pubkey::new_from_array(spl_associated_token_account::id().to_bytes());
     let instruction = solana_program::instruction::Instruction {
         program_id,
         accounts: vec![
             solana_program::instruction::AccountMeta::new(creator_pubkey, true),
             solana_program::instruction::AccountMeta::new(mint_address, false),
             solana_program::instruction::AccountMeta::new(associated_token_account, false),
-            solana_program::instruction::AccountMeta::new_readonly(spl_token::id(), false),
+            solana_program::instruction::AccountMeta::new_readonly(token_program_id, false),
             solana_program::instruction::AccountMeta::new_readonly(
-                spl_associated_token_account::id(),
+                associatede_token_account_id,
                 false,
             ),
             solana_program::instruction::AccountMeta::new_readonly(
-                solana_program::system_program::id(),
+                solana_system_program::id(),
                 false,
             ),
             solana_program::instruction::AccountMeta::new_readonly(
@@ -115,36 +140,18 @@ pub async fn mint_nft(
                 false,
             ),
         ],
-        data: {
-            use borsh::BorshSerialize;
-            #[derive(BorshSerialize)]
-            enum MarketplaceInstruction {
-                MintNft {
-                    name: String,
-                    symbol: String,
-                    uri: String,
-                },
-            }
-            MarketplaceInstruction::MintNft {
-                name: req.name.clone(),
-                symbol: req.symbol.clone(),
-                uri: req.uri.clone(),
-            }
-            .try_to_vec()
-            .map_err(|e| AppError::SerializationError(e.to_string()))?
-        },
+        data: instruction_data
     };
 
     // Get recent blockhash
-    let recent_blockhash = state.solana_client.get_latest_blockhash().await?;
+    let recent_blockhash = state.solana_client.get_latest_blockhash()?;
 
     // Create transaction
     let mut transaction = Transaction::new_with_payer(&[instruction], Some(&creator_pubkey));
     transaction.partial_sign(&[&mint_keypair], recent_blockhash);
 
     Ok(Json(MintNftResponse {
-        transaction: bincode::serialize(&transaction)
-            .map_err(|e| AppError::SerializationError(e.to_string()))?,
+        transaction: serde_json::to_vec(&transaction)?,
         mint_address: mint_address.to_string(),
     }))
 }
@@ -154,15 +161,14 @@ pub async fn send_transaction(
     Json(req): Json<SendTransactionRequest>,
 ) -> Result<Json<SendTransactionResponse>, AppError> {
     // Deserialize the signed transaction
-    let transaction: Transaction = bincode::deserialize(&req.signed_transaction).map_err(|e| {
-        AppError::SerializationError(format!("Failed to deserialize transaction: {}", e))
+    let transaction: Transaction = serde_json::from_slice(&req.signed_transaction).map_err(|e| {
+        AppError::Deserialization(format!("Failed to deserialize transaction: {}", e))
     })?;
 
     // Send the transaction
     let signature = state
         .solana_client
-        .send_and_confirm_transaction(&transaction)
-        .await?;
+        .send_and_confirm_transaction(&transaction)?;
 
     // Extract mint address from transaction (first account after payer)
     let mint_address = if transaction.message.account_keys.len() > 1 {
