@@ -28,8 +28,6 @@ solana-program = "3.0.0"
 solana-transaction-status = "3.0.1"
 solana-account-decoder = "3.0.1"
 solana-commitment-config = "3.0.0"
-anchor-client = "0.31.1"
-anchor-lang = "0.31.1"
 borsh = "1.0"
 
 # Caching
@@ -51,26 +49,6 @@ reqwest = { version = "0.11", features = ["json"] }
 
 # Validation
 validator = { version = "0.18", features = ["derive"] }
-
-# Authentication
-jsonwebtoken = "9.0"
-bcrypt = "0.15"
-
-# Rate limiting
-governor = "0.6"
-
-# Background jobs
-tokio-cron-scheduler = "0.10"
-
-# Metrics
-metrics = "0.22"
-metrics-exporter-prometheus = "0.13"
-
-# Image processing
-image = "0.24"
-
-# File upload
-multer = "3.0"
 
 # AWS SDK
 # aws-config = "1.1"

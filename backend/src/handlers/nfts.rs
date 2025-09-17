@@ -131,7 +131,7 @@ pub async fn mint_nft(
                 uri: req.uri.clone(),
             }
             .try_to_vec()
-            .map_err(|e| AppError::SerializationError(e.to_string()))?
+            .map_err(|e| AppError::Serialization(e))?
         },
     };
 
@@ -143,8 +143,7 @@ pub async fn mint_nft(
     transaction.partial_sign(&[&mint_keypair], recent_blockhash);
 
     Ok(Json(MintNftResponse {
-        transaction: bincode::serialize(&transaction)
-            .map_err(|e| AppError::SerializationError(e.to_string()))?,
+        transaction: bincode::serialize(&transaction).map_err(|e| AppError::Serialization(e))?,
         mint_address: mint_address.to_string(),
     }))
 }
@@ -155,14 +154,13 @@ pub async fn send_transaction(
 ) -> Result<Json<SendTransactionResponse>, AppError> {
     // Deserialize the signed transaction
     let transaction: Transaction = bincode::deserialize(&req.signed_transaction).map_err(|e| {
-        AppError::SerializationError(format!("Failed to deserialize transaction: {}", e))
+        AppError::Deserialization(format!("Failed to deserialize transaction: {}", e))
     })?;
 
     // Send the transaction
     let signature = state
         .solana_client
-        .send_and_confirm_transaction(&transaction)
-        .await?;
+        .send_and_confirm_transaction(&transaction)?;
 
     // Extract mint address from transaction (first account after payer)
     let mint_address = if transaction.message.account_keys.len() > 1 {
