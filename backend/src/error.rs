@@ -8,6 +8,9 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum AppError {
+    #[error("AWS error: {0}")]
+    AWSError(String),
+
     #[error("Database error: {0}")]
     Database(#[from] sqlx::Error),
 
@@ -45,6 +48,7 @@ pub enum AppError {
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         let (status, error_message) = match self {
+            AppError::AWSError(_) => (StatusCode::INTERNAL_SERVER_ERROR, "AWS error"),
             AppError::Database(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Database error"),
             AppError::Redis(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Cache error"),
             AppError::SolanaClient(_) => (StatusCode::BAD_GATEWAY, "Blockchain service error"),
@@ -76,6 +80,7 @@ impl IntoResponse for AppError {
 impl AppError {
     fn error_type(&self) -> &'static str {
         match self {
+            AppError::AWSError(_) => "aws_error",
             AppError::Database(_) => "database_error",
             AppError::Redis(_) => "cache_error",
             AppError::SolanaClient(_) => "blockchain_error",

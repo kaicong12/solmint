@@ -1,6 +1,6 @@
 use aws_config::Region;
 use aws_sdk_s3::{presigning::PresigningConfig, Client};
-use axum::{extract::State, http::StatusCode, response::Json};
+use axum::{extract::State, response::Json};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use uuid::Uuid;
@@ -52,7 +52,8 @@ pub async fn generate_presigned_url(
     let s3_client = Client::new(&config);
 
     // Generate presigned URL for PUT operation
-    let presigning_config = PresigningConfig::expires_in(Duration::from_secs(3600))?; // 1 hour
+    let presigning_config = PresigningConfig::expires_in(Duration::from_secs(3600))
+        .map_err(|e| AppError::AWSError(e.to_string()))?; // 1 hour
 
     let presigned_request = s3_client
         .put_object()
@@ -60,7 +61,8 @@ pub async fn generate_presigned_url(
         .key(&unique_key)
         .content_type(&req.content_type)
         .presigned(presigning_config)
-        .await?;
+        .await
+        .map_err(|e| AppError::AWSError(e.to_string()))?;
 
     // Generate the public URL for the uploaded file
     let image_url = format!(
@@ -101,7 +103,8 @@ pub async fn upload_metadata(
         .content_type("application/json")
         .body(metadata_json.into_bytes().into())
         .send()
-        .await?;
+        .await
+        .map_err(|e| AppError::AWSError(e.to_string()))?;
 
     // Generate the public URL for the metadata
     let metadata_uri = format!(
